@@ -1,0 +1,38 @@
+body>.lr-struct>main>article {
+    max-width: 210mm;
+    padding: 0;
+}
+
+body>.lr-struct>main>article>svg {
+    border: solid var(--color-border);
+    border-width: 1px 0;
+    display: block;
+    margin: var(--length-padding) 0;
+    width: 100%;
+}
+
+@media print {
+    body>.lr-struct>main>article>svg {
+        border: 0;
+        margin: 0;
+    }
+}
+
+@page {
+    margin: 0;
+}
+
+body>.lr-struct>main>article>svg>foreignObject>div>main {
+    display: flow-root;
+}
+
+body>.lr-struct>main>article>svg>foreignObject>div>header,
+body>.lr-struct>main>article>svg>foreignObject>div>footer {
+    display: flex;
+    align-items: center;
+}
+
+body>.lr-struct>main>article>svg:nth-of-type(2n+1)>foreignObject>div>header,
+body>.lr-struct>main>article>svg:nth-of-type(2n+1)>foreignObject>div>footer {
+    justify-content: flex-end;
+}
