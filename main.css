@@ -22,10 +22,6 @@ body>.lr-struct>main>article>svg {
     margin: 0;
 }
 
-body>.lr-struct>main>article>svg>foreignObject>div>main {
-    display: flow-root;
-}
-
 body>.lr-struct>main>article>svg>foreignObject>div>header,
 body>.lr-struct>main>article>svg>foreignObject>div>footer {
     display: flex;

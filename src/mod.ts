@@ -44,12 +44,13 @@ function createPage(index:number):Page{
     header.append(section)
     footer.append(page)
     element.setAttribute('viewBox',`0 0 ${width} ${height}`)
-    element.style.fontSize='16px'
     fo.setAttribute('width','100%')
     fo.setAttribute('height','100%')
+    container.style.fontSize='16px'
     container.style.marginLeft=left?marginRight:marginLeft
     container.style.marginRight=left?marginLeft:marginRight
     header.style.height=marginTop
+    main.style.display='flow-root'
     main.style.height=`calc(${height}px - ${marginTop} - ${marginBottom})`
     footer.style.height=marginBottom
     page.textContent=index.toString()
@@ -276,9 +277,7 @@ function setSize(option:STDNUnitOptions[string]){
     const style=document.createElement('style')
     document.head.append(style)
     setWidthAndHeight(option)
-    width=Math.ceil(width)
-    height=Math.floor(height)
-    style.textContent=`@page{size:${option}}body>.lr-struct>main>article{max-width:${width}px}`
+    style.textContent=`@page{size:${width}px ${height}px}body>.lr-struct>main>article{max-width:${width}px}`
 }
 function setMargin(option:STDNUnitOptions[string]){
     if(typeof option!=='string'){
