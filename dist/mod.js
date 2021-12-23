@@ -8,8 +8,8 @@ let marginLeft = '.4in';
 let binging = '0px';
 let leftHeaderLevel = 0;
 let rightHeaderLevel = 1;
+let rightLevel = 0;
 let breakLevel = 0;
-let keepOddLevel = 0;
 let headings = [];
 let compiler0;
 function stdnToInlinePlainStringLine(stdn) {
@@ -122,7 +122,7 @@ async function breakToPages(lines, article) {
         main: {
             normal: {
                 if (nonEmptyPage) {
-                    if (lineLevel <= breakLevel || line.children.length === 1 && line.children[0].classList.contains('break')) {
+                    if (lineLevel <= breakLevel || line.children.length > 0 && line.children[0].classList.contains('break')) {
                         lastHeadingLines = [];
                         break normal;
                     }
@@ -337,32 +337,40 @@ function setHeaderLevel(option) {
         rightHeaderLevel = right;
     }
 }
-function setBreakLevel(option) {
+function setRightLevel(option) {
     if (typeof option === 'number' && isFinite(option) && option >= 0 && option % 1 === 0) {
+        rightLevel = option;
+        if (breakLevel < rightLevel) {
+            breakLevel = option;
+        }
+    }
+}
+function setBreakLevel(option) {
+    if (typeof option === 'number' && isFinite(option) && option >= rightLevel && option % 1 === 0) {
         breakLevel = option;
     }
 }
-function setKeepOddLevel(option) {
-    if (typeof option === 'number' && isFinite(option) && option >= 0 && option % 1 === 0) {
-        keepOddLevel = option;
-    }
-}
+let paged = false;
 export const page = async (unit, compiler) => {
+    const element = document.createElement('div');
+    if (paged) {
+        return element;
+    }
+    paged = true;
+    const article = document.body.querySelector('article');
+    if (article === null) {
+        return element;
+    }
     compiler0 = compiler;
     headings = compiler.context.indexInfoArray.filter(val => val.orbit === 'heading' || val.unit.tag === 'title');
-    const article = document.body.querySelector('article');
-    const breakDelay = parseBreakDelay(unit.options['break-delay']);
-    const breakNum = parseBreakNum(unit.options['break-num']);
     setSize(unit.options.size);
     setMargin(unit.options.margin);
     setBinging(unit.options.binging);
     setHeaderLevel(unit.options['header-level']);
+    setRightLevel(unit.options['right-level']);
     setBreakLevel(unit.options['break-level']);
-    setKeepOddLevel(unit.options['keep-odd-level']);
-    const element = document.createElement('div');
-    if (article === null) {
-        return element;
-    }
+    const breakDelay = parseBreakDelay(unit.options['break-delay']);
+    const breakNum = parseBreakNum(unit.options['break-num']);
     const observer = new MutationObserver(async () => {
         if (!element.isConnected) {
             return;
