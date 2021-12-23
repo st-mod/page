@@ -12,8 +12,10 @@ let marginTop='.4in'
 let marginRight='.4in'
 let marginBottom='.4in'
 let marginLeft='.4in'
+let binging='0px'
 let leftHeaderLevel=0
 let rightHeaderLevel=1
+let rightLevel=0
 let breakLevel=0
 let headings:IndexInfo[]=[]
 let compiler0:Compiler|undefined
@@ -47,8 +49,9 @@ function createPage(index:number):Page{
     fo.setAttribute('width','100%')
     fo.setAttribute('height','100%')
     container.style.fontSize='16px'
-    container.style.marginLeft=left?marginRight:marginLeft
-    container.style.marginRight=left?marginLeft:marginRight
+    const innerMargin=`calc(${marginLeft} + ${binging})`
+    container.style.marginLeft=left?marginRight:innerMargin
+    container.style.marginRight=left?innerMargin:marginRight
     header.style.height=marginTop
     main.style.display='flow-root'
     main.style.height=`calc(${height}px - ${marginTop} - ${marginBottom})`
@@ -124,7 +127,7 @@ async function breakToPages(lines:Element[],article:HTMLElement){
         main:{
             normal:{
                 if(nonEmptyPage){
-                    if(lineLevel<=breakLevel||line.children.length===1&&line.children[0].classList.contains('break')){
+                    if(lineLevel<=breakLevel||line.children.length>0&&line.children[0].classList.contains('break')){
                         lastHeadingLines=[]
                         break normal
                     }
@@ -310,6 +313,15 @@ function setMargin(option:STDNUnitOptions[string]){
     marginBottom=array[2]
     marginLeft=array[3]
 }
+function setBinging(option:STDNUnitOptions[string]){
+    if(typeof option==='number'){
+        binging=option+'px'
+        return
+    }
+    if(typeof option==='string'){
+        binging=option
+    }
+}
 function setHeaderLevel(option:STDNUnitOptions[string]){
     if(typeof option==='number'&&isFinite(option)&&option>=0&&option%1===0){
         leftHeaderLevel=option
@@ -327,25 +339,40 @@ function setHeaderLevel(option:STDNUnitOptions[string]){
         rightHeaderLevel=right
     }
 }
-function setBreakLevel(option:STDNUnitOptions[string]){
+function setRightLevel(option:STDNUnitOptions[string]){
     if(typeof option==='number'&&isFinite(option)&&option>=0&&option%1===0){
+        rightLevel=option
+        if(breakLevel<rightLevel){
+            breakLevel=option
+        }
+    }
+}
+function setBreakLevel(option:STDNUnitOptions[string]){
+    if(typeof option==='number'&&isFinite(option)&&option>=rightLevel&&option%1===0){
         breakLevel=option
     }
 }
+let paged=false
 export const page:UnitCompiler=async (unit,compiler)=>{
-    compiler0=compiler
-    headings=compiler.context.indexInfoArray.filter(val=>val.orbit==='heading'||val.unit.tag==='title')
-    const article=document.body.querySelector('article')
-    const breakDelay=parseBreakDelay(unit.options['break-delay'])
-    const breakNum=parseBreakNum(unit.options['break-num'])
-    setSize(unit.options.size)
-    setMargin(unit.options.margin)
-    setHeaderLevel(unit.options['header-level'])
-    setBreakLevel(unit.options['break-level'])
     const element=document.createElement('div')
+    if(paged){
+        return element
+    }
+    paged=true
+    const article=document.body.querySelector('article')
     if(article===null){
         return element
     }
+    compiler0=compiler
+    headings=compiler.context.indexInfoArray.filter(val=>val.orbit==='heading'||val.unit.tag==='title')
+    setSize(unit.options.size)
+    setMargin(unit.options.margin)
+    setBinging(unit.options.binging)
+    setHeaderLevel(unit.options['header-level'])
+    setRightLevel(unit.options['right-level'])
+    setBreakLevel(unit.options['break-level'])
+    const breakDelay=parseBreakDelay(unit.options['break-delay'])
+    const breakNum=parseBreakNum(unit.options['break-num'])
     const observer=new MutationObserver(async ()=>{
         if(!element.isConnected){
             return

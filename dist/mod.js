@@ -5,9 +5,11 @@ let marginTop = '.4in';
 let marginRight = '.4in';
 let marginBottom = '.4in';
 let marginLeft = '.4in';
+let binging = '0px';
 let leftHeaderLevel = 0;
 let rightHeaderLevel = 1;
 let breakLevel = 0;
+let keepOddLevel = 0;
 let headings = [];
 let compiler0;
 function stdnToInlinePlainStringLine(stdn) {
@@ -40,8 +42,9 @@ function createPage(index) {
     fo.setAttribute('width', '100%');
     fo.setAttribute('height', '100%');
     container.style.fontSize = '16px';
-    container.style.marginLeft = left ? marginRight : marginLeft;
-    container.style.marginRight = left ? marginLeft : marginRight;
+    const innerMargin = `calc(${marginLeft} + ${binging})`;
+    container.style.marginLeft = left ? marginRight : innerMargin;
+    container.style.marginRight = left ? innerMargin : marginRight;
     header.style.height = marginTop;
     main.style.display = 'flow-root';
     main.style.height = `calc(${height}px - ${marginTop} - ${marginBottom})`;
@@ -308,6 +311,15 @@ function setMargin(option) {
     marginBottom = array[2];
     marginLeft = array[3];
 }
+function setBinging(option) {
+    if (typeof option === 'number') {
+        binging = option + 'px';
+        return;
+    }
+    if (typeof option === 'string') {
+        binging = option;
+    }
+}
 function setHeaderLevel(option) {
     if (typeof option === 'number' && isFinite(option) && option >= 0 && option % 1 === 0) {
         leftHeaderLevel = option;
@@ -330,6 +342,11 @@ function setBreakLevel(option) {
         breakLevel = option;
     }
 }
+function setKeepOddLevel(option) {
+    if (typeof option === 'number' && isFinite(option) && option >= 0 && option % 1 === 0) {
+        keepOddLevel = option;
+    }
+}
 export const page = async (unit, compiler) => {
     compiler0 = compiler;
     headings = compiler.context.indexInfoArray.filter(val => val.orbit === 'heading' || val.unit.tag === 'title');
@@ -338,8 +355,10 @@ export const page = async (unit, compiler) => {
     const breakNum = parseBreakNum(unit.options['break-num']);
     setSize(unit.options.size);
     setMargin(unit.options.margin);
+    setBinging(unit.options.binging);
     setHeaderLevel(unit.options['header-level']);
     setBreakLevel(unit.options['break-level']);
+    setKeepOddLevel(unit.options['keep-odd-level']);
     const element = document.createElement('div');
     if (article === null) {
         return element;

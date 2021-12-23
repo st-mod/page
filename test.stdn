@@ -1,6 +1,6 @@
 {title [Test]}
 {css-src main.css, ucs-src ucs.js, global []}
-{break-delay 2, size B5 landscape, margin 3cm 1.5in, header-level 1 2, break-level 1, page []}
+{size B5 landscape, margin 3cm 1.5in, binging .4in, header-level 1 2, right-level 1, break-level 2, break-delay 2, page []}
 {abbr {[{i [examples]}]}, h1 [Examples]}
 {break []}
 {h2 [Simple Examples]}
