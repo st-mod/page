@@ -100,6 +100,83 @@ async function fillHeaders(pages:Page[]){
         await fillHeader(++index,currentHeadings,page)
     }
 }
+function removeBefore(node:Node,parent:Node){
+    while(true){
+        while(true){
+            if(node.previousSibling===null){
+                break
+            }
+            node.previousSibling.remove()
+        }
+        if(node.parentNode===null||node.parentNode===parent){
+            break
+        }
+        node=node.parentNode
+    }
+}
+function removeAfter(node:Node,parent:Node){
+    while(true){
+        while(true){
+            if(node.nextSibling===null){
+                break
+            }
+            node.nextSibling.remove()
+        }
+        if(node.parentNode===null||node.parentNode===parent){
+            break
+        }
+        node=node.parentNode
+    }
+}
+async function putLine(line:Element,main:Page['main'],nonEmptyPage:boolean){
+    main.append(line)
+    if(line.getBoundingClientRect().bottom<=main.getBoundingClientRect().bottom){
+        return
+    }
+    function noBreak(){
+        if(nonEmptyPage){
+            line.remove()
+            return line
+        }
+    }
+    if(compiler0===undefined||line.children.length!==1||line.childNodes.length!==1){
+        return noBreak()
+    }
+    const info=compiler0.context.idToIndexInfo[line.children[0].id]
+    if(info===undefined){
+        return noBreak()
+    }
+    const breakPoints=line.querySelectorAll('.breakable>*')
+    if(breakPoints.length===0){
+        return noBreak()
+    }
+    for(let i=breakPoints.length-1;i>=0;i--){
+        removeAfter(breakPoints[i],line)
+        if(line.getBoundingClientRect().bottom>main.getBoundingClientRect().bottom){
+            continue
+        }
+        const nline=await compiler0.compileLine([info.unit])
+        const node=nline.querySelectorAll('.breakable>*')[i]
+        if(node===undefined){
+            return
+        }
+        removeBefore(node,nline)
+        node.remove()
+        return nline.children[0]
+    }
+    breakPoints[0].remove()
+    const nline=await compiler0.compileLine([info.unit])
+    if(nonEmptyPage&&line.getBoundingClientRect().bottom>main.getBoundingClientRect().bottom){
+        line.remove()
+        return nline.children[0]
+    }
+    const node=nline.querySelectorAll('.breakable>*')[0]
+    if(node===undefined){
+        return
+    }
+    removeBefore(node,nline)
+    return nline.children[0]
+}
 async function breakToPages(lines:Element[],article:HTMLElement){
     article.innerHTML=''
     let headingIndex=0
@@ -107,10 +184,13 @@ async function breakToPages(lines:Element[],article:HTMLElement){
     let page=createPage(++index)
     const pages=[page]
     article.append(page.element)
-    let lastHeadingLines:Element[]=[]
     let nonEmptyPage=false
-    for(const line of lines){
-        let hasHeading=false
+    function newPage(){
+        pages.push(page=createPage(++index))
+        article.append(page.element)
+        nonEmptyPage=false
+    }
+    for(let line of lines){
         let lineLevel=Infinity
         for(;headingIndex<headings.length;headingIndex++){
             const info=headings[headingIndex]
@@ -118,50 +198,29 @@ async function breakToPages(lines:Element[],article:HTMLElement){
             if(line.querySelector(`[id=${JSON.stringify(id)}]`)===null){
                 break
             }
-            hasHeading=true
             const level=orbit==='heading'?index.length:0
             if(lineLevel>level){
                 lineLevel=level
             }
         }
-        main:{
-            normal:{
-                if(nonEmptyPage){
-                    if(lineLevel<=breakLevel||line.children.length>0&&line.children[0].classList.contains('break')){
-                        lastHeadingLines=[]
-                        break normal
-                    }
-                }
-                page.main.append(line)
-                if(nonEmptyPage){
-                    if(line.getBoundingClientRect().bottom>page.main.getBoundingClientRect().bottom){
-                        break normal
-                    }
-                }
-                break main
-            }
-            pages.push(page=createPage(++index))
-            article.append(page.element)
-            if(lastHeadingLines.length>0){
-                page.main.append(...lastHeadingLines)
-                nonEmptyPage=true
-                lastHeadingLines=[]
-            }else{
-                nonEmptyPage=false
-            }
-            if(line.childNodes.length>0){
-                page.main.append(line)
+        if(nonEmptyPage){
+            if(lineLevel<=breakLevel||line.children.length>0&&line.children[0].classList.contains('break')){
+                newPage()
             }
         }
-        if(line.childNodes.length>0&&line.getBoundingClientRect().height>0){
-            if(hasHeading&&nonEmptyPage){
-                lastHeadingLines=[line]
-            }else{
-                lastHeadingLines=[]
+        if(lineLevel<=rightLevel&&index%2===0){
+            newPage()
+        }
+        while(true){
+            const nline=await putLine(line,page.main,nonEmptyPage)
+            if(nline===undefined){
+                if(line.childNodes.length>0&&line.getBoundingClientRect().height>0){
+                    nonEmptyPage=true
+                }
+                break
             }
-            nonEmptyPage=true
-        }else if(lastHeadingLines.length>0){
-            lastHeadingLines.push(line)
+            line=nline
+            newPage()
         }
     }
     await fillHeaders(pages)
