@@ -180,13 +180,15 @@ async function putLine(line:Element,main:Page['main'],nonEmptyPage:boolean){
 async function breakToPages(lines:Element[],article:HTMLElement){
     article.innerHTML=''
     let headingIndex=0
-    let index=0
-    let page=createPage(++index)
+    let index0=0
+    let realIndex=0
+    let page=createPage(++index0)
     const pages=[page]
     article.append(page.element)
     let nonEmptyPage=false
     function newPage(){
-        pages.push(page=createPage(++index))
+        index0++
+        pages.push(page=createPage(++realIndex))
         article.append(page.element)
         nonEmptyPage=false
     }
@@ -203,13 +205,30 @@ async function breakToPages(lines:Element[],article:HTMLElement){
                 lineLevel=level
             }
         }
-        if(nonEmptyPage){
-            if(lineLevel<=breakLevel||line.children.length>0&&line.children[0].classList.contains('break')){
+        if(compiler0!==undefined&&line.children.length>0){
+            const first=line.children[0]
+            if(first.classList.contains('break')){
+                if((lineLevel<=rightLevel||first.classList.contains('right'))&&index0%2===1){
+                    newPage()
+                }
+                const info=compiler0.context.idToIndexInfo[first.id]
+                if(info!==undefined){
+                    if(info.unit.tag==='break'){
+                        const {index}=info.unit.options
+                        if(typeof index==='number'&&isFinite(index)&&index%1===0&&index>=1){
+                            realIndex=index-1
+                        }
+                    }
+                }
                 newPage()
+            }else if(lineLevel<=breakLevel){
+                if(nonEmptyPage){
+                    newPage()
+                }
+                if(lineLevel<=rightLevel&&index0%2===0){
+                    newPage()
+                }
             }
-        }
-        if(lineLevel<=rightLevel&&index%2===0){
-            newPage()
         }
         while(true){
             const nline=await putLine(line,page.main,nonEmptyPage)
@@ -232,7 +251,7 @@ function parseBreakDelay(option:STDNUnitOptions[string]){
     return 1000
 }
 function parseBreakNum(option:STDNUnitOptions[string]){
-    if(typeof option==='number'&&isFinite(option)&&option>=1&&option%1===0){
+    if(typeof option==='number'&&isFinite(option)&&option%1===0&&option>=1){
         return option
     }
     return 1
@@ -382,7 +401,7 @@ function setBinging(option:STDNUnitOptions[string]){
     }
 }
 function setHeaderLevel(option:STDNUnitOptions[string]){
-    if(typeof option==='number'&&isFinite(option)&&option>=0&&option%1===0){
+    if(typeof option==='number'&&isFinite(option)&&option%1===0&&option>=0){
         leftHeaderLevel=option
         rightHeaderLevel=option
         return
@@ -391,15 +410,15 @@ function setHeaderLevel(option:STDNUnitOptions[string]){
         return
     }
     let [left,right]=option.split(/\s+/,2).map(Number)
-    if(isFinite(left)&&left>=0&&left%1===0){
+    if(isFinite(left)&&left%1===0&&left>=0){
         leftHeaderLevel=left
     }
-    if(isFinite(right)&&right>=0&&right%1===0){
+    if(isFinite(right)&&right%1===0&&right>=0){
         rightHeaderLevel=right
     }
 }
 function setRightLevel(option:STDNUnitOptions[string]){
-    if(typeof option==='number'&&isFinite(option)&&option>=0&&option%1===0){
+    if(typeof option==='number'&&isFinite(option)&&option%1===0&&option>=0){
         rightLevel=option
         if(breakLevel<rightLevel){
             breakLevel=option
@@ -407,7 +426,7 @@ function setRightLevel(option:STDNUnitOptions[string]){
     }
 }
 function setBreakLevel(option:STDNUnitOptions[string]){
-    if(typeof option==='number'&&isFinite(option)&&option>=rightLevel&&option%1===0){
+    if(typeof option==='number'&&isFinite(option)&&option%1===0&&option>=rightLevel){
         breakLevel=option
     }
 }
