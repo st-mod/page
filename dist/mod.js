@@ -12,6 +12,7 @@ let rightLevel = 0;
 let breakLevel = 0;
 let headings = [];
 let compiler0;
+const idToPageIndex = {};
 function stdnToInlinePlainStringLine(stdn) {
     for (const line of stdn) {
         const string = lineToInlinePlainString(line);
@@ -90,6 +91,7 @@ async function fillHeaders(pages) {
             if (page.main.querySelector(`[id=${JSON.stringify(id)}]`) === null) {
                 break;
             }
+            idToPageIndex[id] = page.indexEle.textContent ?? undefined;
             const level = orbit === 'heading' ? index.length : 0;
             for (let i = level + 1; i < currentHeadings.length; i++) {
                 currentHeadings[i] = undefined;
@@ -127,7 +129,7 @@ function removeAfter(node, parent) {
         node = node.parentNode;
     }
 }
-async function putLine(line, main, nonEmptyPage) {
+async function putLine(line, main, nonEmptyPage, breakPointOffset) {
     main.append(line);
     if (line.getBoundingClientRect().bottom <= main.getBoundingClientRect().bottom) {
         return;
@@ -135,7 +137,10 @@ async function putLine(line, main, nonEmptyPage) {
     function noBreak() {
         if (nonEmptyPage) {
             line.remove();
-            return line;
+            return {
+                nline: line,
+                breakPointOffset
+            };
         }
     }
     if (compiler0 === undefined || line.children.length !== 1 || line.childNodes.length !== 1) {
@@ -155,33 +160,41 @@ async function putLine(line, main, nonEmptyPage) {
             continue;
         }
         const nline = (await compiler0.compileSTDN([[info.unit]])).children[0];
-        const node = nline.querySelectorAll('.breakable>*')[i];
+        const node = nline.querySelectorAll('.breakable>*')[breakPointOffset + i];
         if (node === undefined) {
             return;
         }
         removeBefore(node, nline);
         node.remove();
-        return nline;
+        return {
+            nline,
+            breakPointOffset: breakPointOffset + i + 1
+        };
     }
-    breakPoints[0].remove();
+    line.remove();
     const nline = (await compiler0.compileSTDN([[info.unit]])).children[0];
-    if (nonEmptyPage && line.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
-        line.remove();
-        return nline;
+    if (breakPointOffset > 0) {
+        const node = nline.querySelectorAll('.breakable>*')[breakPointOffset - 1];
+        if (node === undefined) {
+            return;
+        }
+        removeBefore(node, nline);
+        node.remove();
     }
-    const node = nline.querySelectorAll('.breakable>*')[0];
-    if (node === undefined) {
-        return;
+    if (nonEmptyPage) {
+        return {
+            nline,
+            breakPointOffset
+        };
     }
-    removeBefore(node, nline);
-    return nline;
+    main.append(nline);
 }
 async function breakToPages(lines, article) {
     article.innerHTML = '';
     let headingIndex = 0;
-    let index0 = 0;
-    let realIndex = 0;
-    let page = createPage(++index0);
+    let index0 = 1;
+    let realIndex = 1;
+    let page = createPage(realIndex);
     const pages = [page];
     article.append(page.element);
     let nonEmptyPage = false;
@@ -191,7 +204,7 @@ async function breakToPages(lines, article) {
         article.append(page.element);
         nonEmptyPage = false;
     }
-    for (let line of lines) {
+    for (const line of lines) {
         let lineLevel = Infinity;
         for (; headingIndex < headings.length; headingIndex++) {
             const info = headings[headingIndex];
@@ -230,15 +243,18 @@ async function breakToPages(lines, article) {
                 }
             }
         }
+        let cline = line;
+        let breakPointOffset = 0;
         while (true) {
-            const nline = await putLine(line, page.main, nonEmptyPage);
-            if (nline === undefined) {
-                if (line.childNodes.length > 0 && line.getBoundingClientRect().height > 0) {
+            const result = await putLine(cline, page.main, nonEmptyPage, breakPointOffset);
+            if (result === undefined) {
+                if (cline.childNodes.length > 0 && cline.getBoundingClientRect().height > 0) {
                     nonEmptyPage = true;
                 }
                 break;
             }
-            line = nline;
+            cline = result.nline;
+            breakPointOffset = result.breakPointOffset;
             newPage();
         }
     }
@@ -431,6 +447,7 @@ function setBreakLevel(option) {
     }
 }
 let paged = false;
+const pagedListeners = [];
 export const page = async (unit, compiler) => {
     const element = document.createElement('div');
     if (paged) {
@@ -462,25 +479,35 @@ export const page = async (unit, compiler) => {
             await breakToPages(lines, article);
             await new Promise(r => setTimeout(r, 1000));
         }
+        for (const listener of pagedListeners) {
+            await listener();
+        }
     });
     observer.observe(document.body, { childList: true, subtree: true });
     return element;
 };
 export const contents = async (unit, compiler) => {
     const element = document.createElement('div');
-    for (const { unit, orbit, index } of headings) {
+    for (const { unit, orbit, index, id } of headings) {
         if (orbit !== 'heading' || index.length > 3) {
             continue;
         }
         const item = document.createElement('div');
         const indexEle = document.createElement('span');
         const content = document.createElement('span');
+        const tail = document.createElement('span');
+        const pageIndexEle = document.createElement('div');
         item.classList.add(`level${index.length}`);
         element.append(item);
         item.append(indexEle);
         item.append(content);
+        item.append(tail);
+        tail.append(pageIndexEle);
         indexEle.append(new Text(index.join('.')));
         content.append(await compiler.compileLine(stdnToInlinePlainStringLine(unit.children)));
+        pagedListeners.push(async () => {
+            pageIndexEle.textContent = idToPageIndex[id] ?? '';
+        });
     }
     return element;
 };

@@ -38,8 +38,8 @@ body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child::
     content: "  ";
 }
 
-.unit.contents>div>span:first-child::after {
-    content: "  ";
+.unit.contents>div {
+    display: flow-root;
 }
 
 .unit.contents>div.level2 {
@@ -48,4 +48,17 @@ body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child::
 
 .unit.contents>div.level3 {
     margin-left: calc(2 * var(--length-tab));
+}
+
+.unit.contents>div>span:first-child::after {
+    content: "  ";
+}
+
+.unit.contents>div>span:last-child {
+    text-align: right;
+}
+
+.unit.contents>div>span:last-child>div {
+    float: right;
+    width: var(--length-tab);
 }
