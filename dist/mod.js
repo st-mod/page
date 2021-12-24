@@ -1,4 +1,5 @@
-import { lineToInlinePlainString } from '@ddu6/stc';
+import { getLastGlobalOption, lineToInlinePlainString } from '@ddu6/stc';
+const fontSize = 16;
 let width = parseLength('210mm');
 let height = parseLength('297mm');
 let marginTop = '.4in';
@@ -46,7 +47,7 @@ function createPage(index) {
     element.setAttribute('viewBox', `0 0 ${width} ${height}`);
     fo.setAttribute('width', '100%');
     fo.setAttribute('height', '100%');
-    container.style.fontSize = '16px';
+    container.style.fontSize = `${fontSize}px`;
     const innerMargin = `calc(${marginLeft} + ${binging})`;
     container.style.marginLeft = left ? marginRight : innerMargin;
     container.style.marginRight = left ? innerMargin : marginRight;
@@ -486,8 +487,15 @@ export const page = async (unit, compiler) => {
     observer.observe(document.body, { childList: true, subtree: true });
     return element;
 };
+function parseDotGap(option) {
+    if (typeof option === 'number' && isFinite(option) && option > 0) {
+        return option;
+    }
+    return fontSize;
+}
 export const contents = async (unit, compiler) => {
     const element = document.createElement('div');
+    const dotGap = parseDotGap(unit.options['dot-gap'] ?? getLastGlobalOption('dot-gap', 'contents', compiler.context.tagToGlobalOptions));
     for (const { unit, orbit, index, id } of headings) {
         if (orbit !== 'heading' || index.length > 3) {
             continue;
@@ -495,9 +503,10 @@ export const contents = async (unit, compiler) => {
         const item = document.createElement('div');
         const indexEle = document.createElement('span');
         const content = document.createElement('span');
-        const tail = document.createElement('span');
-        const pageIndexEle = document.createElement('div');
+        const tail = document.createElement('div');
+        const pageIndexEle = document.createElement('a');
         item.classList.add(`level${index.length}`);
+        pageIndexEle.href = `#${encodeURIComponent(id)}`;
         element.append(item);
         item.append(indexEle);
         item.append(content);
@@ -507,6 +516,27 @@ export const contents = async (unit, compiler) => {
         content.append(await compiler.compileLine(stdnToInlinePlainStringLine(unit.children)));
         pagedListeners.push(async () => {
             pageIndexEle.textContent = idToPageIndex[id] ?? '';
+            let { left } = item.getBoundingClientRect();
+            const { top, left: right } = pageIndexEle.getBoundingClientRect();
+            for (const { right, bottom } of content.getClientRects()) {
+                if (bottom >= top && right > left) {
+                    left = right;
+                }
+            }
+            if (right <= left) {
+                return;
+            }
+            const fo = element.closest('foreignObject');
+            if (fo === null) {
+                return;
+            }
+            const { width } = fo.getBoundingClientRect();
+            const total = Math.floor((right - left) * fo.width.animVal.value / width / dotGap);
+            for (let i = 0; i < total; i++) {
+                const dot = document.createElement('div');
+                dot.style.width = `${dotGap}px`;
+                pageIndexEle.before(dot);
+            }
         });
     }
     return element;

@@ -42,6 +42,10 @@ body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child::
     display: flow-root;
 }
 
+.unit.contents>div.level1 {
+    margin: var(--length-gap) 0;
+}
+
 .unit.contents>div.level2 {
     margin-left: var(--length-tab);
 }
@@ -54,11 +58,22 @@ body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child::
     content: "  ";
 }
 
-.unit.contents>div>span:last-child {
-    text-align: right;
+.unit.contents>div>div {
+    float: right;
 }
 
-.unit.contents>div>span:last-child>div {
-    float: right;
+.unit.contents>div>div>div {
+    color: var(--color-light);
+    display: inline-block;
+    text-align: center;
+}
+
+.unit.contents>div>div>div::after {
+    content: ".";
+}
+
+.unit.contents>div>div>a {
+    display: inline-block;
+    text-align: right;
     width: var(--length-tab);
 }

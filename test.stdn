@@ -1,5 +1,6 @@
 {title [Test]}
 {css-src main.css, ucs-src ucs.js, global []}
+{global, dot-gap 8, contents []}
 {size B5 landscape, margin 3cm 1.5in, binging .4in, header-level 1 2, right-level 1, break-level 2, break-delay 2, page []}
 {class break, h0 [Contents]}
 {class breakable, contents []}
@@ -13,7 +14,7 @@
 {h2 [Long Table]}
 {h3 [Breakable Long Table]}
 {class breakable, table [
-    {caption [A caption]}
+    {caption [A Caption]}
     {tr [
         {th [one]}
         {th [two]}
