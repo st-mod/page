@@ -34,6 +34,6 @@ body>.lr-struct>main>article>svg:nth-of-type(2n+1)>foreignObject>div>footer {
     justify-content: flex-end;
 }
 
-body>.lr-struct>main>article>svg>foreignObject>div>header>div>div:first-child::after {
+body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child::after {
     content: "  ";
 }
