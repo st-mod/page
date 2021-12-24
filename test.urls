@@ -1,4 +1,7 @@
 test.stdn
 https://cdn.jsdelivr.net/gh/st-org/st-docs@main/main.urls
+https://cdn.jsdelivr.net/gh/st-org/st-docs@main/stdn.stdn
 https://cdn.jsdelivr.net/gh/st-org/st-docs@main/compile.stdn
+https://cdn.jsdelivr.net/gh/st-org/st-docs@main/katex.stdn
+https://cdn.jsdelivr.net/gh/st-org/st-docs@main/index.stdn
 https://cdn.jsdelivr.net/gh/st-mod/cd@main/test.stdn
