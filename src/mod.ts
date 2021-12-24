@@ -2,8 +2,8 @@ import {Compiler,IndexInfo,lineToInlinePlainString,UnitCompiler} from '@ddu6/stc
 import {STDN,STDNUnitOptions} from 'stdn'
 interface Page{
     element:SVGSVGElement
-    sectionIndexEle:HTMLSpanElement
-    sectionHeadingEle:HTMLSpanElement
+    headingIndexEle:HTMLSpanElement
+    headingContentEle:HTMLSpanElement
     main:HTMLElement
     indexEle:HTMLDivElement
 }
@@ -37,19 +37,19 @@ function createPage(index:number):Page{
     const header=document.createElement('header')
     const main=document.createElement('main')
     const footer=document.createElement('footer')
-    const sectionEle=document.createElement('div')
+    const headingEle=document.createElement('div')
     const indexEle=document.createElement('div')
-    const sectionIndexEle=document.createElement('span')
-    const sectionHeadingEle=document.createElement('span')
+    const headingIndexEle=document.createElement('span')
+    const headingContentEle=document.createElement('span')
     element.append(fo)
     fo.append(container)
     container.append(header)
     container.append(main)
     container.append(footer)
-    header.append(sectionEle)
+    header.append(headingEle)
     footer.append(indexEle)
-    sectionEle.append(sectionIndexEle)
-    sectionEle.append(sectionHeadingEle)
+    headingEle.append(headingIndexEle)
+    headingEle.append(headingContentEle)
     element.setAttribute('viewBox',`0 0 ${width} ${height}`)
     fo.setAttribute('width','100%')
     fo.setAttribute('height','100%')
@@ -64,8 +64,8 @@ function createPage(index:number):Page{
     indexEle.textContent=index.toString()
     return {
         element,
-        sectionIndexEle,
-        sectionHeadingEle,
+        headingIndexEle,
+        headingContentEle,
         main,
         indexEle
     }
@@ -74,7 +74,7 @@ async function fillHeader(index:number,currentHeadings:(IndexInfo|undefined)[],p
     const left=index%2===0
     const heading=currentHeadings[left?leftHeaderLevel:rightHeaderLevel]
     if(heading!==undefined&&compiler0!==undefined){
-        page.sectionIndexEle.append(new Text(heading.index.join('.')))
+        page.headingIndexEle.append(new Text(heading.index.join('.')))
         let df:DocumentFragment|Text
         const {abbr}=heading.unit.options
         if(typeof abbr==='object'){
@@ -84,7 +84,7 @@ async function fillHeader(index:number,currentHeadings:(IndexInfo|undefined)[],p
         }else{
             df=await compiler0.compileLine(stdnToInlinePlainStringLine(heading.unit.children))
         }
-        page.sectionHeadingEle.append(df)
+        page.headingContentEle.append(df)
     }
 }
 async function fillHeaders(pages:Page[]){
