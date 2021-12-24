@@ -1,4 +1,5 @@
 import {Compiler,IndexInfo,lineToInlinePlainString,UnitCompiler} from '@ddu6/stc'
+import * as exp from 'constants'
 import {STDN,STDNUnitOptions} from 'stdn'
 interface Page{
     element:SVGSVGElement
@@ -75,16 +76,14 @@ async function fillHeader(index:number,currentHeadings:(IndexInfo|undefined)[],p
     const heading=currentHeadings[left?leftHeaderLevel:rightHeaderLevel]
     if(heading!==undefined&&compiler0!==undefined){
         page.headingIndexEle.append(new Text(heading.index.join('.')))
-        let df:DocumentFragment|Text
         const {abbr}=heading.unit.options
-        if(typeof abbr==='object'){
-            df=await compiler0.compileLine(stdnToInlinePlainStringLine(abbr))
-        }else if(typeof abbr==='string'){
-            df=new Text(abbr)
+        if(typeof abbr==='string'){
+            page.headingContentEle.append(new Text(abbr))
+        }else if(typeof abbr==='object'){
+            page.headingContentEle.append(await compiler0.compileLine(stdnToInlinePlainStringLine(abbr)))
         }else{
-            df=await compiler0.compileLine(stdnToInlinePlainStringLine(heading.unit.children))
+            page.headingContentEle.append(await compiler0.compileLine(stdnToInlinePlainStringLine(heading.unit.children)))
         }
-        page.headingContentEle.append(df)
     }
 }
 async function fillHeaders(pages:Page[]){
@@ -162,27 +161,27 @@ async function putLine(line:Element,main:Page['main'],nonEmptyPage:boolean){
         if(line.getBoundingClientRect().bottom>main.getBoundingClientRect().bottom){
             continue
         }
-        const nline=await compiler0.compileLine([info.unit])
+        const nline=(await compiler0.compileSTDN([[info.unit]])).children[0]
         const node=nline.querySelectorAll('.breakable>*')[i]
         if(node===undefined){
             return
         }
         removeBefore(node,nline)
         node.remove()
-        return nline.children[0]
+        return nline
     }
     breakPoints[0].remove()
-    const nline=await compiler0.compileLine([info.unit])
+    const nline=(await compiler0.compileSTDN([[info.unit]])).children[0]
     if(nonEmptyPage&&line.getBoundingClientRect().bottom>main.getBoundingClientRect().bottom){
         line.remove()
-        return nline.children[0]
+        return nline
     }
     const node=nline.querySelectorAll('.breakable>*')[0]
     if(node===undefined){
         return
     }
     removeBefore(node,nline)
-    return nline.children[0]
+    return nline
 }
 async function breakToPages(lines:Element[],article:HTMLElement){
     article.innerHTML=''
@@ -471,5 +470,28 @@ export const page:UnitCompiler=async (unit,compiler)=>{
         }
     })
     observer.observe(document.body,{childList:true,subtree:true})
+    return element
+}
+export const contents:UnitCompiler=async (unit,compiler)=>{
+    const element=document.createElement('div')
+    for(const {unit,orbit,index} of headings){
+        if(orbit!=='heading'||index.length>3){
+            continue
+        }
+        const item=document.createElement('div')
+        const indexEle=document.createElement('span')
+        const content=document.createElement('span')
+        item.classList.add(`level${index.length}`)
+        element.append(item)
+        item.append(indexEle)
+        item.append(content)
+        indexEle.append(new Text(index.join('.')))
+        content.append(await compiler.compileLine(stdnToInlinePlainStringLine(unit.children)))
+    }
+    return element
+}
+export const h0:UnitCompiler=async (unit,compiler)=>{
+    const element=document.createElement('h1')
+    element.append(await compiler.compileSTDN(unit.children))
     return element
 }
