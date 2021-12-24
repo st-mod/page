@@ -68,7 +68,9 @@ async function fillHeader(index, currentHeadings, page) {
     const left = index % 2 === 0;
     const heading = currentHeadings[left ? leftHeaderLevel : rightHeaderLevel];
     if (heading !== undefined && compiler0 !== undefined) {
-        page.headingIndexEle.append(new Text(heading.index.join('.')));
+        if (heading.orbit === 'heading') {
+            page.headingIndexEle.append(new Text(heading.index.join('.')));
+        }
         const { abbr } = heading.unit.options;
         if (typeof abbr === 'string') {
             page.headingContentEle.append(new Text(abbr));

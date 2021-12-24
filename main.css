@@ -34,7 +34,7 @@ body>.lr-struct>main>article>svg:nth-of-type(2n+1)>foreignObject>div>footer {
     justify-content: flex-end;
 }
 
-body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child::after {
+body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child:not(:empty)::after {
     content: "  ";
 }
 
@@ -54,7 +54,7 @@ body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child::
     margin-left: calc(2 * var(--length-tab));
 }
 
-.unit.contents>div>span:first-child::after {
+.unit.contents>div>span:first-child:not(:empty)::after {
     content: "  ";
 }
 
