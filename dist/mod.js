@@ -31,8 +31,8 @@ function createPage(index) {
     const footer = document.createElement('footer');
     const sectionEle = document.createElement('div');
     const indexEle = document.createElement('div');
-    const sectionIndexEle = document.createElement('div');
-    const sectionHeadingEle = document.createElement('div');
+    const sectionIndexEle = document.createElement('span');
+    const sectionHeadingEle = document.createElement('span');
     element.append(fo);
     fo.append(container);
     container.append(header);
