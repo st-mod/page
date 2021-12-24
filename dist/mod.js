@@ -495,6 +495,7 @@ function parseDotGap(option) {
 }
 export const contents = async (unit, compiler) => {
     const element = document.createElement('div');
+    element.classList.add('breakable');
     const dotGap = parseDotGap(unit.options['dot-gap'] ?? getLastGlobalOption('dot-gap', 'contents', compiler.context.tagToGlobalOptions));
     for (const { unit, orbit, index, id } of headings) {
         if (orbit !== 'heading' || index.length > 3) {
