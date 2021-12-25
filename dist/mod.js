@@ -1,4 +1,5 @@
-import { getLastGlobalOption, lineToInlinePlainString } from '@ddu6/stc';
+import { lineToInlinePlainString } from '@ddu6/stc/dist/base';
+import { getLastGlobalOption } from '@ddu6/stc/dist/countext';
 const fontSize = 16;
 let width = parseLength('210mm');
 let height = parseLength('297mm');

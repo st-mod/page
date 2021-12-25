@@ -1,5 +1,7 @@
-import {Compiler,getLastGlobalOption,IndexInfo,lineToInlinePlainString,UnitCompiler} from '@ddu6/stc'
 import {STDN,STDNUnitOptions} from 'stdn'
+import {Compiler,IndexInfo,UnitCompiler} from '@ddu6/stc'
+import {lineToInlinePlainString} from '@ddu6/stc/dist/base'
+import {getLastGlobalOption} from '@ddu6/stc/dist/countext'
 interface Page{
     element:SVGSVGElement
     headingIndexEle:HTMLSpanElement
