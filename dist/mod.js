@@ -1,109 +1,279 @@
-import { lineToInlinePlainString } from '@ddu6/stc/dist/base';
-import { getLastGlobalOption } from '@ddu6/stc/dist/countext';
 const fontSize = 16;
-let width = parseLength('210mm');
-let height = parseLength('297mm');
-let marginTop = '.4in';
-let marginRight = '.4in';
-let marginBottom = '.4in';
-let marginLeft = '.4in';
-let binging = '0px';
-let leftHeaderLevel = 0;
-let rightHeaderLevel = 1;
-let rightLevel = 0;
-let breakLevel = 0;
-let headings = [];
-let compiler0;
-const idToPageIndex = {};
-function stdnToInlinePlainStringLine(stdn) {
+const defaultWidth = parseLength('210mm');
+const defaultHeight = parseLength('297mm');
+const defaultMarginTop = '.4in';
+const defaultMarginRight = '.4in';
+const defaultMarginBottom = '.4in';
+const defaultMarginLeft = '.4in';
+const defaultBinging = '0px';
+const defaultLeftHeaderLevel = 0;
+const defaultRightHeaderLevel = 1;
+const defaultRightLevel = 0;
+export function parseLength(option) {
+    if (typeof option !== 'string') {
+        return NaN;
+    }
+    if (option.endsWith('px')) {
+        return Number(option.slice(0, -2));
+    }
+    if (option.endsWith('cm')) {
+        return Number(option.slice(0, -2)) * 96 / 2.54;
+    }
+    if (option.endsWith('mm')) {
+        return Number(option.slice(0, -2)) * 96 / 25.4;
+    }
+    if (option.endsWith('in')) {
+        return Number(option.slice(0, -2)) * 96;
+    }
+    if (option.endsWith('pc')) {
+        return Number(option.slice(0, -2)) * 16;
+    }
+    if (option.endsWith('pt')) {
+        return Number(option.slice(0, -2)) * 4 / 3;
+    }
+    return NaN;
+}
+export function parseSize(option) {
+    if (typeof option !== 'string') {
+        return {
+            width: defaultWidth,
+            height: defaultHeight
+        };
+    }
+    if (option.endsWith(' landscape')) {
+        const { width, height } = parseSize(option.slice(0, -10).trim());
+        return {
+            width: height,
+            height: width
+        };
+    }
+    if (option.endsWith(' portrait')) {
+        return parseSize(option.slice(0, -9).trim());
+    }
+    if (option === 'A5') {
+        return {
+            width: parseLength('148mm'),
+            height: parseLength('210mm')
+        };
+    }
+    if (option === 'A4') {
+        return {
+            width: parseLength('210mm'),
+            height: parseLength('297mm')
+        };
+    }
+    if (option === 'A3') {
+        return {
+            width: parseLength('297mm'),
+            height: parseLength('420mm')
+        };
+    }
+    if (option === 'B5') {
+        return {
+            width: parseLength('176mm'),
+            height: parseLength('250mm')
+        };
+    }
+    if (option === 'B4') {
+        return {
+            width: parseLength('250mm'),
+            height: parseLength('353mm')
+        };
+    }
+    if (option === 'JIS-B5') {
+        return {
+            width: parseLength('182mm'),
+            height: parseLength('257mm')
+        };
+    }
+    if (option === 'JIS-B4') {
+        return {
+            width: parseLength('257mm'),
+            height: parseLength('364mm')
+        };
+    }
+    if (option === 'letter') {
+        return {
+            width: parseLength('8.5in'),
+            height: parseLength('11in')
+        };
+    }
+    if (option === 'legal') {
+        return {
+            width: parseLength('8.5in'),
+            height: parseLength('14in')
+        };
+    }
+    if (option === 'ledger') {
+        return {
+            width: parseLength('11in'),
+            height: parseLength('17in')
+        };
+    }
+    const [width, height] = option.trim().split(/\s+/, 2).map(parseLength);
+    if (isFinite(width) && width > 0) {
+        if (height === undefined) {
+            return {
+                width,
+                height: width
+            };
+        }
+        if (isFinite(height) && height > 0) {
+            return {
+                width,
+                height
+            };
+        }
+        return {
+            width,
+            height: defaultHeight
+        };
+    }
+    return {
+        width: defaultWidth,
+        height: defaultHeight
+    };
+}
+function setSize({ width, height }, root) {
+    if (root instanceof ShadowRoot) {
+        return;
+    }
+    const style = document.createElement('style');
+    style.textContent = `@page {
+        margin: 0;
+        size: ${width}px ${height}px;
+    }
+    
+    body>.lr-struct>main>article {
+        max-width: ${width}px;
+    }`;
+    root.document.head.append(style);
+}
+function parseMargin(option) {
+    if (typeof option !== 'string') {
+        return {
+            marginTop: defaultMarginTop,
+            marginRight: defaultMarginRight,
+            marginBottom: defaultMarginBottom,
+            marginLeft: defaultMarginLeft
+        };
+    }
+    const array = option.trim().split(/\s+/, 4);
+    if (array.length === 1) {
+        return {
+            marginTop: array[0],
+            marginRight: array[0],
+            marginBottom: array[0],
+            marginLeft: array[0]
+        };
+    }
+    if (array.length === 2) {
+        return {
+            marginTop: array[0],
+            marginRight: array[1],
+            marginBottom: array[0],
+            marginLeft: array[1]
+        };
+    }
+    if (array.length === 3) {
+        return {
+            marginTop: array[0],
+            marginRight: array[1],
+            marginBottom: array[2],
+            marginLeft: array[1]
+        };
+    }
+    return {
+        marginTop: array[0],
+        marginRight: array[1],
+        marginBottom: array[2],
+        marginLeft: array[3]
+    };
+}
+function parseBinging(option) {
+    if (typeof option === 'number') {
+        return option + 'px';
+    }
+    if (typeof option === 'string') {
+        return option;
+    }
+    return defaultBinging;
+}
+function parseHeaderLevel(option) {
+    if (typeof option === 'number' && isFinite(option) && option % 1 === 0 && option >= 0) {
+        return {
+            leftHeaderLevel: option,
+            rightHeaderLevel: option
+        };
+    }
+    if (typeof option !== 'string') {
+        return {
+            leftHeaderLevel: defaultLeftHeaderLevel,
+            rightHeaderLevel: defaultRightHeaderLevel
+        };
+    }
+    const [leftHeaderLevel, rightHeaderLevel] = option.trim().split(/\s+/, 2).map(Number);
+    if (isFinite(leftHeaderLevel) && leftHeaderLevel % 1 === 0 && leftHeaderLevel >= 0) {
+        if (rightHeaderLevel === undefined) {
+            return {
+                leftHeaderLevel,
+                rightHeaderLevel: leftHeaderLevel
+            };
+        }
+        if (isFinite(rightHeaderLevel) && rightHeaderLevel % 1 === 0 && rightHeaderLevel >= 0) {
+            return {
+                leftHeaderLevel,
+                rightHeaderLevel
+            };
+        }
+        return {
+            leftHeaderLevel,
+            rightHeaderLevel: defaultRightHeaderLevel
+        };
+    }
+    return {
+        leftHeaderLevel: defaultLeftHeaderLevel,
+        rightHeaderLevel: defaultRightHeaderLevel
+    };
+}
+function parseBreakLevel(rightLevel, breakLevel) {
+    if (typeof rightLevel !== 'number' || !isFinite(rightLevel) || rightLevel % 1 !== 0 || rightLevel < 0) {
+        rightLevel = defaultRightLevel;
+    }
+    if (typeof breakLevel !== 'number' || !isFinite(breakLevel) || breakLevel % 1 !== 0 || breakLevel < rightLevel) {
+        breakLevel = rightLevel;
+    }
+    return {
+        rightLevel,
+        breakLevel
+    };
+}
+function parseBreakDelay(option) {
+    if (typeof option === 'number' && isFinite(option) && option >= 0) {
+        return option * 1000;
+    }
+    return 1000;
+}
+function parseBreakNum(option) {
+    if (typeof option === 'number' && isFinite(option) && option % 1 === 0 && option >= 1) {
+        return option;
+    }
+    return 1;
+}
+function parseDotGap(option) {
+    if (typeof option === 'number' && isFinite(option) && option > 0) {
+        return option;
+    }
+    return fontSize;
+}
+function stdnToInlinePlainStringLine(stdn, compiler) {
     for (const line of stdn) {
-        const string = lineToInlinePlainString(line);
+        const string = compiler.base.lineToInlinePlainString(line);
         if (string.length > 0) {
             return line;
         }
     }
     return [];
-}
-function createPage(index) {
-    const left = index % 2 === 0;
-    const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-    const container = document.createElement('div');
-    const header = document.createElement('header');
-    const main = document.createElement('main');
-    const footer = document.createElement('footer');
-    const headingEle = document.createElement('div');
-    const indexEle = document.createElement('div');
-    const headingIndexEle = document.createElement('span');
-    const headingContentEle = document.createElement('span');
-    element.append(fo);
-    fo.append(container);
-    container.append(header);
-    container.append(main);
-    container.append(footer);
-    header.append(headingEle);
-    footer.append(indexEle);
-    headingEle.append(headingIndexEle);
-    headingEle.append(headingContentEle);
-    element.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    fo.setAttribute('width', '100%');
-    fo.setAttribute('height', '100%');
-    container.style.fontSize = `${fontSize}px`;
-    const innerMargin = `calc(${marginLeft} + ${binging})`;
-    container.style.marginLeft = left ? marginRight : innerMargin;
-    container.style.marginRight = left ? innerMargin : marginRight;
-    header.style.height = marginTop;
-    main.style.display = 'flow-root';
-    main.style.height = `calc(${height}px - ${marginTop} - ${marginBottom})`;
-    footer.style.height = marginBottom;
-    indexEle.textContent = index.toString();
-    return {
-        element,
-        headingIndexEle,
-        headingContentEle,
-        main,
-        indexEle
-    };
-}
-async function fillHeader(index, currentHeadings, page) {
-    const left = index % 2 === 0;
-    const heading = currentHeadings[left ? leftHeaderLevel : rightHeaderLevel];
-    if (heading !== undefined && compiler0 !== undefined) {
-        if (heading.orbit === 'heading') {
-            page.headingIndexEle.append(new Text(heading.index.join('.')));
-        }
-        const { abbr } = heading.unit.options;
-        if (typeof abbr === 'string') {
-            page.headingContentEle.append(new Text(abbr));
-        }
-        else if (typeof abbr === 'object') {
-            page.headingContentEle.append(await compiler0.compileLine(stdnToInlinePlainStringLine(abbr)));
-        }
-        else {
-            page.headingContentEle.append(await compiler0.compileLine(stdnToInlinePlainStringLine(heading.unit.children)));
-        }
-    }
-}
-async function fillHeaders(pages) {
-    let headingIndex = 0;
-    let currentHeadings = [];
-    let index = 0;
-    for (const page of pages) {
-        for (; headingIndex < headings.length; headingIndex++) {
-            const info = headings[headingIndex];
-            const { id, index, orbit } = info;
-            if (page.main.querySelector(`[id=${JSON.stringify(id)}]`) === null) {
-                break;
-            }
-            idToPageIndex[id] = page.indexEle.textContent ?? undefined;
-            const level = orbit === 'heading' ? index.length : 0;
-            for (let i = level + 1; i < currentHeadings.length; i++) {
-                currentHeadings[i] = undefined;
-            }
-            currentHeadings[level] = info;
-        }
-        await fillHeader(++index, currentHeadings, page);
-    }
 }
 function removeBefore(node, parent) {
     while (true) {
@@ -133,7 +303,7 @@ function removeAfter(node, parent) {
         node = node.parentNode;
     }
 }
-async function putLine(line, main, nonEmptyPage, breakPointOffset) {
+async function putLine(line, main, nonEmptyPage, breakPointOffset, compiler) {
     main.append(line);
     if (line.getBoundingClientRect().bottom <= main.getBoundingClientRect().bottom) {
         return;
@@ -147,10 +317,10 @@ async function putLine(line, main, nonEmptyPage, breakPointOffset) {
             };
         }
     }
-    if (compiler0 === undefined || line.children.length !== 1 || line.childNodes.length !== 1) {
+    if (line.children.length !== 1 || line.childNodes.length !== 1) {
         return noBreak();
     }
-    const info = compiler0.context.idToIndexInfo[line.children[0].id];
+    const info = compiler.context.idToIndexInfo[line.children[0].id];
     if (info === undefined) {
         return noBreak();
     }
@@ -163,7 +333,7 @@ async function putLine(line, main, nonEmptyPage, breakPointOffset) {
         if (line.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
             continue;
         }
-        const nline = (await compiler0.compileSTDN([[info.unit]])).children[0];
+        const nline = (await compiler.compileSTDN([[info.unit]])).children[0];
         const node = nline.querySelectorAll('.breakable>*')[breakPointOffset + i];
         if (node === undefined) {
             return;
@@ -176,7 +346,7 @@ async function putLine(line, main, nonEmptyPage, breakPointOffset) {
         };
     }
     line.remove();
-    const nline = (await compiler0.compileSTDN([[info.unit]])).children[0];
+    const nline = (await compiler.compileSTDN([[info.unit]])).children[0];
     if (breakPointOffset > 0) {
         const node = nline.querySelectorAll('.breakable>*')[breakPointOffset - 1];
         if (node === undefined) {
@@ -193,41 +363,126 @@ async function putLine(line, main, nonEmptyPage, breakPointOffset) {
     }
     main.append(nline);
 }
-async function breakToPages(lines, article) {
-    article.innerHTML = '';
-    let headingIndex = 0;
+function createPage(index, env) {
+    const left = index % 2 === 0;
+    const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+    const container = document.createElement('div');
+    const header = document.createElement('header');
+    const main = document.createElement('main');
+    const footer = document.createElement('footer');
+    const headingEle = document.createElement('div');
+    const indexEle = document.createElement('div');
+    const headingIndexEle = document.createElement('span');
+    const headingContentEle = document.createElement('span');
+    element.append(fo);
+    fo.append(container);
+    container.append(header);
+    container.append(main);
+    container.append(footer);
+    header.append(headingEle);
+    footer.append(indexEle);
+    headingEle.append(headingIndexEle);
+    headingEle.append(headingContentEle);
+    element.setAttribute('viewBox', `0 0 ${env.width} ${env.height}`);
+    fo.setAttribute('width', '100%');
+    fo.setAttribute('height', '100%');
+    container.style.fontSize = `${fontSize}px`;
+    const innerMargin = `calc(${env.marginLeft} + ${env.binging})`;
+    container.style.marginLeft = left ? env.marginRight : innerMargin;
+    container.style.marginRight = left ? innerMargin : env.marginRight;
+    header.style.height = env.marginTop;
+    main.style.display = 'flow-root';
+    main.style.height = `calc(${env.height}px - ${env.marginTop} - ${env.marginBottom})`;
+    footer.style.height = env.marginBottom;
+    indexEle.textContent = index.toString();
+    return {
+        element,
+        headingIndexEle,
+        headingContentEle,
+        main,
+        indexEle
+    };
+}
+async function fillHeader(index, currentHeadings, page, env) {
+    const left = index % 2 === 0;
+    const heading = currentHeadings[left ? env.leftHeaderLevel : env.rightHeaderLevel];
+    if (heading !== undefined) {
+        if (heading.orbit === 'heading') {
+            page.headingIndexEle.append(new Text(heading.index.join('.')));
+        }
+        const { abbr } = heading.unit.options;
+        if (typeof abbr === 'string') {
+            page.headingContentEle.append(new Text(abbr));
+        }
+        else if (typeof abbr === 'object') {
+            page.headingContentEle.append(await env.compiler.compileLine(stdnToInlinePlainStringLine(abbr, env.compiler)));
+        }
+        else {
+            page.headingContentEle.append(await env.compiler.compileLine(stdnToInlinePlainStringLine(heading.unit.children, env.compiler)));
+        }
+    }
+}
+async function fillHeaders(pages, env) {
+    let rheadings = env.headings;
+    let currentHeadings = [];
+    let index = 0;
+    for (const page of pages) {
+        const nrheadings = [];
+        for (const info of rheadings) {
+            const { id, index, orbit } = info;
+            if (page.main.querySelector(`[id=${JSON.stringify(id)}]`) === null) {
+                nrheadings.push(info);
+                continue;
+            }
+            env.idToPageIndex[id] = page.indexEle.textContent ?? undefined;
+            const level = orbit === 'heading' ? index.length : 0;
+            for (let i = level + 1; i < currentHeadings.length; i++) {
+                currentHeadings[i] = undefined;
+            }
+            currentHeadings[level] = info;
+        }
+        rheadings = nrheadings;
+        await fillHeader(++index, currentHeadings, page, env);
+    }
+}
+async function breakToPages(lines, container, env) {
+    container.innerHTML = '';
+    let rheadings = env.headings;
     let index0 = 1;
     let realIndex = 1;
-    let page = createPage(realIndex);
+    let page = createPage(realIndex, env);
     const pages = [page];
-    article.append(page.element);
+    container.append(page.element);
     let nonEmptyPage = false;
     function newPage() {
         index0++;
-        pages.push(page = createPage(++realIndex));
-        article.append(page.element);
+        pages.push(page = createPage(++realIndex, env));
+        container.append(page.element);
         nonEmptyPage = false;
     }
     for (const line of lines) {
+        const nrheadings = [];
         let lineLevel = Infinity;
-        for (; headingIndex < headings.length; headingIndex++) {
-            const info = headings[headingIndex];
+        for (const info of rheadings) {
             const { id, index, orbit } = info;
             if (line.querySelector(`[id=${JSON.stringify(id)}]`) === null) {
-                break;
+                nrheadings.push(info);
+                continue;
             }
             const level = orbit === 'heading' ? index.length : 0;
             if (lineLevel > level) {
                 lineLevel = level;
             }
         }
-        if (compiler0 !== undefined && line.children.length > 0) {
+        rheadings = nrheadings;
+        if (line.children.length > 0) {
             const first = line.children[0];
             if (first.classList.contains('break')) {
-                if ((lineLevel <= rightLevel || first.classList.contains('right')) && index0 % 2 === 1) {
+                if ((lineLevel <= env.rightLevel || first.classList.contains('right')) && index0 % 2 === 1) {
                     newPage();
                 }
-                const info = compiler0.context.idToIndexInfo[first.id];
+                const info = env.compiler.context.idToIndexInfo[first.id];
                 if (info !== undefined) {
                     if (info.unit.tag === 'break') {
                         const { index } = info.unit.options;
@@ -238,11 +493,11 @@ async function breakToPages(lines, article) {
                 }
                 newPage();
             }
-            else if (lineLevel <= breakLevel) {
+            else if (lineLevel <= env.breakLevel) {
                 if (nonEmptyPage) {
                     newPage();
                 }
-                if (lineLevel <= rightLevel && index0 % 2 === 0) {
+                if (lineLevel <= env.rightLevel && index0 % 2 === 0) {
                     newPage();
                 }
             }
@@ -250,7 +505,7 @@ async function breakToPages(lines, article) {
         let cline = line;
         let breakPointOffset = 0;
         while (true) {
-            const result = await putLine(cline, page.main, nonEmptyPage, breakPointOffset);
+            const result = await putLine(cline, page.main, nonEmptyPage, breakPointOffset, env.compiler);
             if (result === undefined) {
                 if (cline.childNodes.length > 0 && cline.getBoundingClientRect().height > 0) {
                     nonEmptyPage = true;
@@ -262,245 +517,89 @@ async function breakToPages(lines, article) {
             newPage();
         }
     }
-    await fillHeaders(pages);
+    await fillHeaders(pages, env);
 }
-function parseBreakDelay(option) {
-    if (typeof option === 'number' && isFinite(option) && option >= 0) {
-        return option * 1000;
-    }
-    return 1000;
-}
-function parseBreakNum(option) {
-    if (typeof option === 'number' && isFinite(option) && option % 1 === 0 && option >= 1) {
-        return option;
-    }
-    return 1;
-}
-function parseLength(string) {
-    if (string.endsWith('px')) {
-        return Number(string.slice(0, -2));
-    }
-    if (string.endsWith('cm')) {
-        return Number(string.slice(0, -2)) * 96 / 2.54;
-    }
-    if (string.endsWith('mm')) {
-        return Number(string.slice(0, -2)) * 96 / 25.4;
-    }
-    if (string.endsWith('in')) {
-        return Number(string.slice(0, -2)) * 96;
-    }
-    if (string.endsWith('pc')) {
-        return Number(string.slice(0, -2)) * 16;
-    }
-    if (string.endsWith('pt')) {
-        return Number(string.slice(0, -2)) * 4 / 3;
-    }
-    return NaN;
-}
-function setWidthAndHeight(string) {
-    if (string.endsWith(' landscape')) {
-        setWidthAndHeight(string.slice(0, -10).trim());
-        const tmp = width;
-        width = height;
-        height = tmp;
-        return;
-    }
-    if (string.endsWith(' portrait')) {
-        setWidthAndHeight(string.slice(0, -9).trim());
-        return;
-    }
-    if (string === 'A5') {
-        width = parseLength('148mm');
-        height = parseLength('210mm');
-        return;
-    }
-    if (string === 'A4') {
-        width = parseLength('210mm');
-        height = parseLength('297mm');
-        return;
-    }
-    if (string === 'A3') {
-        width = parseLength('297mm');
-        height = parseLength('420mm');
-        return;
-    }
-    if (string === 'B5') {
-        width = parseLength('176mm');
-        height = parseLength('250mm');
-        return;
-    }
-    if (string === 'B4') {
-        width = parseLength('250mm');
-        height = parseLength('353mm');
-        return;
-    }
-    if (string === 'JIS-B5') {
-        width = parseLength('182mm');
-        height = parseLength('257mm');
-        return;
-    }
-    if (string === 'JIS-B4') {
-        width = parseLength('257mm');
-        height = parseLength('364mm');
-        return;
-    }
-    if (string === 'letter') {
-        width = parseLength('8.5in');
-        height = parseLength('11in');
-        return;
-    }
-    if (string === 'legal') {
-        width = parseLength('8.5in');
-        height = parseLength('14in');
-        return;
-    }
-    if (string === 'ledger') {
-        width = parseLength('11in');
-        height = parseLength('17in');
-        return;
-    }
-    const [width0, height0] = string.trim().split(/\s+/, 2).map(parseLength);
-    if (isFinite(width0) && width0 > 0) {
-        width = width0;
-        if (height0 === undefined) {
-            height = width0;
-            return;
-        }
-        if (isFinite(height0) && height0 > 0) {
-            height = height0;
-        }
-    }
-}
-function setSize(option) {
-    if (typeof option !== 'string') {
-        return;
-    }
-    const style = document.createElement('style');
-    document.head.append(style);
-    setWidthAndHeight(option);
-    style.textContent = `@page{size:${width}px ${height}px}body>.lr-struct>main>article{max-width:${width}px}`;
-}
-function setMargin(option) {
-    if (typeof option !== 'string') {
-        return;
-    }
-    const array = option.split(/\s+/, 4);
-    if (array.length === 1) {
-        marginTop = array[0];
-        marginRight = array[0];
-        marginBottom = array[0];
-        marginLeft = array[0];
-        return;
-    }
-    if (array.length === 2) {
-        marginTop = array[0];
-        marginRight = array[1];
-        marginBottom = array[0];
-        marginLeft = array[1];
-        return;
-    }
-    if (array.length === 3) {
-        marginTop = array[0];
-        marginRight = array[1];
-        marginBottom = array[2];
-        marginLeft = array[1];
-        return;
-    }
-    marginTop = array[0];
-    marginRight = array[1];
-    marginBottom = array[2];
-    marginLeft = array[3];
-}
-function setBinging(option) {
-    if (typeof option === 'number') {
-        binging = option + 'px';
-        return;
-    }
-    if (typeof option === 'string') {
-        binging = option;
-    }
-}
-function setHeaderLevel(option) {
-    if (typeof option === 'number' && isFinite(option) && option % 1 === 0 && option >= 0) {
-        leftHeaderLevel = option;
-        rightHeaderLevel = option;
-        return;
-    }
-    if (typeof option !== 'string') {
-        return;
-    }
-    let [left, right] = option.split(/\s+/, 2).map(Number);
-    if (isFinite(left) && left % 1 === 0 && left >= 0) {
-        leftHeaderLevel = left;
-    }
-    if (isFinite(right) && right % 1 === 0 && right >= 0) {
-        rightHeaderLevel = right;
-    }
-}
-function setRightLevel(option) {
-    if (typeof option === 'number' && isFinite(option) && option % 1 === 0 && option >= 0) {
-        rightLevel = option;
-        if (breakLevel < rightLevel) {
-            breakLevel = option;
-        }
-    }
-}
-function setBreakLevel(option) {
-    if (typeof option === 'number' && isFinite(option) && option % 1 === 0 && option >= rightLevel) {
-        breakLevel = option;
-    }
-}
-let paged = false;
-const pagedListeners = [];
+const compilerToEnv = new Map();
 export const page = async (unit, compiler) => {
     const element = document.createElement('div');
-    if (paged) {
+    let env = compilerToEnv.get(compiler);
+    if (env !== undefined) {
         return element;
     }
-    paged = true;
-    const article = document.body.querySelector('article');
-    if (article === null) {
+    let container;
+    if (compiler.context.root instanceof ShadowRoot) {
+        container = compiler.context.root.querySelector('div');
+    }
+    else {
+        container = compiler.context.root.document.body.querySelector('article');
+    }
+    if (container === null) {
         return element;
     }
-    compiler0 = compiler;
-    headings = compiler.context.indexInfoArray.filter(val => val.orbit === 'heading' || val.unit.tag === 'title');
-    setSize(unit.options.size);
-    setMargin(unit.options.margin);
-    setBinging(unit.options.binging);
-    setHeaderLevel(unit.options['header-level']);
-    setRightLevel(unit.options['right-level']);
-    setBreakLevel(unit.options['break-level']);
+    const staticContainer = container;
+    const size = parseSize(unit.options.size);
+    const { marginTop, marginRight, marginBottom, marginLeft } = parseMargin(unit.options.margin);
+    const { leftHeaderLevel, rightHeaderLevel } = parseHeaderLevel(unit.options['header-level']);
+    const { rightLevel, breakLevel } = parseBreakLevel(unit.options['right-level'], unit.options['break-level']);
+    compilerToEnv.set(compiler, env = {
+        width: size.width,
+        height: size.height,
+        marginTop,
+        marginRight,
+        marginBottom,
+        marginLeft,
+        binging: parseBinging(unit.options.binging),
+        leftHeaderLevel,
+        rightHeaderLevel,
+        rightLevel,
+        breakLevel,
+        headings: compiler.context.indexInfoArray.filter(val => val.orbit === 'heading' || val.unit.tag === 'title'),
+        idToPageIndex: {},
+        pagedListeners: [],
+        compiler
+    });
+    setSize(size, compiler.context.root);
+    const staticEnv = env;
     const breakDelay = parseBreakDelay(unit.options['break-delay']);
     const breakNum = parseBreakNum(unit.options['break-num']);
-    const observer = new MutationObserver(async () => {
-        if (!element.isConnected) {
+    let observer;
+    let timer;
+    let listened = false;
+    const listener = async () => {
+        if (!element.isConnected || listened) {
             return;
         }
-        observer.disconnect();
+        listened = true;
+        if (observer !== undefined) {
+            observer.disconnect();
+        }
+        if (timer !== undefined) {
+            clearInterval(timer);
+        }
         await new Promise(r => setTimeout(r, breakDelay));
-        const lines = Array.from(article.children);
+        const lines = Array.from(staticContainer.children);
         for (let i = 0; i < breakNum; i++) {
-            await breakToPages(lines, article);
+            await breakToPages(lines, staticContainer, staticEnv);
             await new Promise(r => setTimeout(r, 1000));
         }
-        for (const listener of pagedListeners) {
+        for (const listener of staticEnv.pagedListeners) {
             await listener();
         }
-    });
+    };
+    observer = new MutationObserver(listener);
+    timer = window.setInterval(listener, 1000);
     observer.observe(document.body, { childList: true, subtree: true });
     return element;
 };
-function parseDotGap(option) {
-    if (typeof option === 'number' && isFinite(option) && option > 0) {
-        return option;
-    }
-    return fontSize;
-}
 export const contents = async (unit, compiler) => {
     const element = document.createElement('div');
+    const env = compilerToEnv.get(compiler);
+    if (env === undefined) {
+        return element;
+    }
     element.classList.add('breakable');
-    const dotGap = parseDotGap(unit.options['dot-gap'] ?? getLastGlobalOption('dot-gap', 'contents', compiler.context.tagToGlobalOptions));
-    for (const { unit, orbit, index, id } of headings) {
+    const dotGap = parseDotGap(unit.options['dot-gap'] ?? compiler.extractor.extractLastGlobalOption('dot-gap', 'contents', compiler.context.tagToGlobalOptions));
+    for (const { unit, orbit, index, id } of env.headings) {
         if (orbit !== 'heading' || index.length > 3) {
             continue;
         }
@@ -517,9 +616,9 @@ export const contents = async (unit, compiler) => {
         item.append(tail);
         tail.append(pageIndexEle);
         indexEle.append(new Text(index.join('.')));
-        content.append(await compiler.compileLine(stdnToInlinePlainStringLine(unit.children)));
-        pagedListeners.push(async () => {
-            pageIndexEle.textContent = idToPageIndex[id] ?? '';
+        content.append(await compiler.compileLine(stdnToInlinePlainStringLine(unit.children, compiler)));
+        env.pagedListeners.push(async () => {
+            pageIndexEle.textContent = env.idToPageIndex[id] ?? '';
             let { left } = item.getBoundingClientRect();
             const { top, left: right } = pageIndexEle.getBoundingClientRect();
             for (const { right, bottom } of content.getClientRects()) {

@@ -1,5 +1,4 @@
 body>.lr-struct>main>article {
-    max-width: 210mm;
     padding: 0;
 }
 
@@ -16,10 +15,6 @@ body>.lr-struct>main>article>svg {
         border: 0;
         margin: 0;
     }
-}
-
-@page {
-    margin: 0;
 }
 
 body>.lr-struct>main>article>svg>foreignObject>div>header,
@@ -68,7 +63,7 @@ body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child:n
     text-align: center;
 }
 
-.unit.contents>div>div>div::after {
+.unit.contents>div>div>div::before {
     content: ".";
 }
 
