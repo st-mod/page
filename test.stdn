@@ -1,8 +1,11 @@
 {title [Test]}
+{mod demo@0.6.2, global []}
 {css-src main.css, ucs-src ucs.js, global []}
+{global, no-count, demo []}
 {size B5 landscape, margin 3cm 1.5in, binging .4in, header-level 1 2, right-level 1, break-level 2, break-delay 2, page []}
 {class break, h0 [Contents]}
 {dot-gap 8, contents []}
+[]
 {class right, index 1, break []}
 {abbr {[{i [Abbr]}]}, h1 [Abbreviation]}
 []
@@ -139,5 +142,26 @@ You should try to avoid long paragraph.
 {h2 [Float Page Index for Long Long Long Long Long Long Heading Content in Contents]}
 []
 {h1 [[{'p'}-Adic Number]]}
+[]
+{h1 [Demo]}
+{demo [
+    {title [Test]}
+    {css-src main.css, ucs-src ucs.js, global []}
+    {size A5 landscape, page []}
+    {dot-gap 8, contents []}
+    []
+    {h1 [Test]}
+    {h2 [Test]}
+]}
+[]
+{demo [
+    {title [Test]}
+    {css-src main.css, ucs-src ucs.js, global []}
+    {size 500px 250px, page []}
+    {dot-gap 8, contents []}
+    []
+    {h1 [Test]}
+    {h2 [Test]}
+]}
 []
 {class right, index 1, break []}

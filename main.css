@@ -2,7 +2,8 @@ body>.lr-struct>main>article {
     padding: 0;
 }
 
-body>.lr-struct>main>article>svg {
+body>.lr-struct>main>article>svg,
+:host>div>svg {
     border: solid var(--color-border);
     border-width: 1px 0;
     display: block;
@@ -18,18 +19,23 @@ body>.lr-struct>main>article>svg {
 }
 
 body>.lr-struct>main>article>svg>foreignObject>div>header,
-body>.lr-struct>main>article>svg>foreignObject>div>footer {
+body>.lr-struct>main>article>svg>foreignObject>div>footer,
+:host>div>svg>foreignObject>div>header,
+:host>div>svg>foreignObject>div>footer {
     align-items: center;
     display: flex;
     white-space: pre-wrap;
 }
 
 body>.lr-struct>main>article>svg:nth-of-type(2n+1)>foreignObject>div>header,
-body>.lr-struct>main>article>svg:nth-of-type(2n+1)>foreignObject>div>footer {
+body>.lr-struct>main>article>svg:nth-of-type(2n+1)>foreignObject>div>footer,
+:host>div>svg:nth-of-type(2n+1)>foreignObject>div>header,
+:host>div>svg:nth-of-type(2n+1)>foreignObject>div>footer {
     justify-content: flex-end;
 }
 
-body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child:not(:empty)::after {
+body>.lr-struct>main>article>svg>foreignObject>div>header>div>span:first-child:not(:empty)::after,
+:host>div>svg>foreignObject>div>header>div>span:first-child:not(:empty)::after {
     content: "  ";
 }
 
