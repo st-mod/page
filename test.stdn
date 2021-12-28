@@ -147,7 +147,7 @@ You should try to avoid long paragraph.
 {demo [
     {title [Test]}
     {css-src main.css, ucs-src ucs.js, global []}
-    {size A5 landscape, page []}
+    {size A5 landscape, break-delay 2, page []}
     {dot-gap 8, contents []}
     []
     {h1 [Test]}
@@ -157,7 +157,7 @@ You should try to avoid long paragraph.
 {demo [
     {title [Test]}
     {css-src main.css, ucs-src ucs.js, global []}
-    {size 500px 250px, page []}
+    {size 500px 250px, break-delay 2, page []}
     {dot-gap 8, contents []}
     []
     {h1 [Test]}
