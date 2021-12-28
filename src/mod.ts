@@ -557,9 +557,9 @@ export const page:UnitCompiler=async (unit,compiler)=>{
     }
     let container:HTMLElement|null
     if(compiler.context.root instanceof ShadowRoot){
-        container=compiler.context.root.querySelector('div')
+        container=compiler.context.root.querySelector(':host>div')
     }else{
-        container=compiler.context.root.document.body.querySelector('article')
+        container=compiler.context.root.document.body.querySelector('body>.lr-struct>main>article')
     }
     if(container===null){
         return element
