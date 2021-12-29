@@ -134,10 +134,12 @@ export function parseSize(option) {
         height: defaultHeight
     };
 }
+const rootToSized = new Map();
 function setSize({ width, height }, root) {
-    if (root instanceof ShadowRoot) {
+    if (root instanceof ShadowRoot || rootToSized.get(root)) {
         return;
     }
+    rootToSized.set(root, true);
     const style = document.createElement('style');
     style.textContent = `@page {
         margin: 0;

@@ -147,10 +147,12 @@ export function parseSize(option:STDNUnitOptions[string]):Size{
         height:defaultHeight
     }
 }
+const rootToSized=new Map<Compiler['context']['root'],true|undefined>()
 function setSize({width,height}:Size,root:Compiler['context']['root']){
-    if(root instanceof ShadowRoot){
+    if(root instanceof ShadowRoot||rootToSized.get(root)){
         return
     }
+    rootToSized.set(root,true)
     const style=document.createElement('style')
     style.textContent=`@page {
         margin: 0;
