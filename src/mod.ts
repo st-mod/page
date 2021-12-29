@@ -142,6 +142,12 @@ export function parseSize(option:STDNUnitOptions[string]):Size{
             height:defaultHeight
         }
     }
+    if(isFinite(height)&&height>0){
+        return {
+            width:defaultWidth,
+            height
+        }
+    }
     return {
         width:defaultWidth,
         height:defaultHeight
@@ -244,6 +250,12 @@ function parseHeaderLevel(option:STDNUnitOptions[string]){
         return {
             leftHeaderLevel,
             rightHeaderLevel:defaultRightHeaderLevel
+        }
+    }
+    if(isFinite(rightHeaderLevel)&&rightHeaderLevel%1===0&&rightHeaderLevel>=0){
+        return {
+            leftHeaderLevel:defaultLeftHeaderLevel,
+            rightHeaderLevel
         }
     }
     return {
