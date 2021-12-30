@@ -602,7 +602,7 @@ export const page = async (unit, compiler) => {
     };
     observer = new MutationObserver(listener);
     timer = window.setInterval(listener, 1000);
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(staticContainer, { childList: true, subtree: true });
     return element;
 };
 export const contents = async (unit, compiler) => {
