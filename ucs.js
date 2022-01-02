@@ -1,1 +1,1 @@
-export {page,contents,h0} from './mod.js'
+export {page, contents, h0} from './mod.js'
