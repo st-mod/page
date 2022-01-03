@@ -161,13 +161,13 @@ function setSize({width, height}: Size, root: Compiler['context']['root']) {
     rootToSized.set(root, true)
     const style = document.createElement('style')
     style.textContent = `@page {
-        margin: 0;
-        size: ${width}px ${height}px;
-    }
-    
-    body>.lr-struct>main>article {
-        max-width: ${width}px;
-    }`
+    margin: 0;
+    size: ${width}px ${height}px;
+}
+
+body>.lr-struct>main>article {
+    max-width: ${width}px;
+}`
     root.document.head.append(style)
 }
 function parseMargin(option: STDNUnitOptions[string]) {
