@@ -153,12 +153,12 @@ export function parseSize(option: STDNUnitOptions[string]): Size {
         height: defaultHeight
     }
 }
-const rootToSized = new Map<Compiler['context']['root'], true | undefined>()
+let sized = false
 function setSize({width, height}: Size, root: Compiler['context']['root']) {
-    if (root instanceof ShadowRoot || rootToSized.get(root)) {
+    if (sized || root !== undefined) {
         return
     }
-    rootToSized.set(root, true)
+    sized = true
     const style = document.createElement('style')
     style.textContent = `@page {
     margin: 0;
@@ -168,7 +168,7 @@ function setSize({width, height}: Size, root: Compiler['context']['root']) {
 body>.lr-struct>main>article {
     max-width: ${width}px;
 }`
-    root.document.head.append(style)
+    document.head.append(style)
 }
 function parseMargin(option: STDNUnitOptions[string]) {
     if (typeof option !== 'string') {
@@ -572,10 +572,10 @@ export const page: UnitCompiler = async (unit, compiler) => {
         return element
     }
     let container: HTMLElement | null
-    if (compiler.context.root instanceof ShadowRoot) {
+    if (compiler.context.root !== undefined) {
         container = compiler.context.root.querySelector(':host>div')
     } else {
-        container = compiler.context.root.document.body.querySelector('body>.lr-struct>main>article')
+        container = document.body.querySelector('body>.lr-struct>main>article')
     }
     if (container === null) {
         return element

@@ -140,12 +140,12 @@ export function parseSize(option) {
         height: defaultHeight
     };
 }
-const rootToSized = new Map();
+let sized = false;
 function setSize({ width, height }, root) {
-    if (root instanceof ShadowRoot || rootToSized.get(root)) {
+    if (sized || root !== undefined) {
         return;
     }
-    rootToSized.set(root, true);
+    sized = true;
     const style = document.createElement('style');
     style.textContent = `@page {
     margin: 0;
@@ -155,7 +155,7 @@ function setSize({ width, height }, root) {
 body>.lr-struct>main>article {
     max-width: ${width}px;
 }`;
-    root.document.head.append(style);
+    document.head.append(style);
 }
 function parseMargin(option) {
     if (typeof option !== 'string') {
@@ -543,11 +543,11 @@ export const page = async (unit, compiler) => {
         return element;
     }
     let container;
-    if (compiler.context.root instanceof ShadowRoot) {
+    if (compiler.context.root !== undefined) {
         container = compiler.context.root.querySelector(':host>div');
     }
     else {
-        container = compiler.context.root.document.body.querySelector('body>.lr-struct>main>article');
+        container = document.body.querySelector('body>.lr-struct>main>article');
     }
     if (container === null) {
         return element;
