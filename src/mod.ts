@@ -369,7 +369,7 @@ async function getEnd(unit: STDNUnit, line: Element, main: Page['main'], nonEmpt
             continue
         }
         tmpLine.remove()
-        putUnit(unit, main, start, i, compiler)
+        await putUnit(unit, main, start, i, compiler)
         return i
     }
     tmpLine.remove()

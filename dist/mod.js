@@ -356,7 +356,7 @@ async function getEnd(unit, line, main, nonEmptyPage, start, compiler) {
             continue;
         }
         tmpLine.remove();
-        putUnit(unit, main, start, i, compiler);
+        await putUnit(unit, main, start, i, compiler);
         return i;
     }
     tmpLine.remove();
