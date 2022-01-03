@@ -1,4 +1,4 @@
-import type {STDN, STDNUnitOptions} from 'stdn'
+import type {STDN, STDNUnit, STDNUnitOptions} from 'stdn'
 import type {Compiler, IndexInfo, UnitCompiler} from '@ddu6/stc'
 const fontSize = 16
 const defaultWidth = parseLength('210mm')
@@ -330,65 +330,54 @@ function removeAfter(node: Node, parent: Node) {
         node = node.parentNode
     }
 }
-async function putLine(line: Element, main: Page['main'], nonEmptyPage: boolean, breakPointOffset: number, compiler: Compiler) {
-    main.append(line)
-    if (line.getBoundingClientRect().bottom <= main.getBoundingClientRect().bottom) {
+function clipLine(line: Element, start: number, end: number, breakPoints?: NodeListOf<Element>) {
+    if (start === 0 && end === Infinity) {
         return
     }
-    function noBreak() {
-        if (nonEmptyPage) {
-            line.remove()
-            return {
-                nline: line,
-                breakPointOffset
-            }
-        }
+    if (breakPoints === undefined) {
+        breakPoints = line.querySelectorAll('.breakable>*')
     }
-    if (line.children.length !== 1 || line.childNodes.length !== 1) {
-        return noBreak()
+    const startNode = breakPoints[start - 1]
+    const endNode = breakPoints[end - 1]
+    if (startNode !== undefined) {
+        removeBefore(startNode, line)
+        startNode.remove()
     }
-    const info = compiler.context.idToIndexInfo[line.children[0].id]
-    if (info === undefined) {
-        return noBreak()
+    if (endNode !== undefined) {
+        removeAfter(endNode, line)
     }
-    const breakPoints = line.querySelectorAll('.breakable>*')
-    if (breakPoints.length === 0) {
-        return noBreak()
+}
+async function putUnit(unit: STDNUnit, main: Page['main'], start: number, end: number, compiler: Compiler) {
+    const line = (await compiler.compileSTDN([[unit]])).children[0]
+    clipLine(line, start, end)
+    main.append(line)
+}
+async function getEnd(unit: STDNUnit, line: Element, main: Page['main'], nonEmptyPage: boolean, start: number, compiler: Compiler) {
+    const tmpLine = <Element>line.cloneNode(true)
+    const breakPoints = tmpLine.querySelectorAll('.breakable>*')
+    clipLine(tmpLine, start, Infinity, breakPoints)
+    main.append(tmpLine)
+    if (tmpLine.getBoundingClientRect().bottom <= main.getBoundingClientRect().bottom) {
+        tmpLine.remove()
+        clipLine(line, start, Infinity)
+        main.append(line)
+        return
     }
-    for (let i = breakPoints.length - 1; i >= 0; i--) {
-        removeAfter(breakPoints[i], line)
-        if (line.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
+    for (let i = breakPoints.length; i > start; i--) {
+        removeAfter(breakPoints[i - 1], tmpLine)
+        if (tmpLine.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
             continue
         }
-        const nline = (await compiler.compileSTDN([[info.unit]])).children[0]
-        const node = nline.querySelectorAll('.breakable>*')[breakPointOffset + i]
-        if (node === undefined) {
-            return
-        }
-        removeBefore(node, nline)
-        node.remove()
-        return {
-            nline,
-            breakPointOffset: breakPointOffset + i + 1
-        }
+        tmpLine.remove()
+        putUnit(unit, main, start, i, compiler)
+        return i
     }
-    line.remove()
-    const nline = (await compiler.compileSTDN([[info.unit]])).children[0]
-    if (breakPointOffset > 0) {
-        const node = nline.querySelectorAll('.breakable>*')[breakPointOffset - 1]
-        if (node === undefined) {
-            return
-        }
-        removeBefore(node, nline)
-        node.remove()
-    }
+    tmpLine.remove()
     if (nonEmptyPage) {
-        return {
-            nline,
-            breakPointOffset
-        }
+        return start
     }
-    main.append(nline)
+    clipLine(line, start, Infinity)
+    main.append(line)
 }
 interface Env {
     readonly width: number
@@ -545,19 +534,32 @@ async function breakToPages(lines: Element[], container: HTMLElement, env: Env) 
                 }
             }
         }
-        let cline = line
-        let breakPointOffset = 0
-        while (true) {
-            const result = await putLine(cline, page.main, nonEmptyPage, breakPointOffset, env.compiler)
-            if (result === undefined) {
-                if (cline.childNodes.length > 0 && cline.getBoundingClientRect().height > 0) {
-                    nonEmptyPage = true
+        if (line.children.length === 1 && line.childNodes.length === 1) {
+            const info = env.compiler.context.idToIndexInfo[line.children[0].id]
+            if (info !== undefined) {
+                let start = 0
+                while (true) {
+                    const result = await getEnd(info.unit, line, page.main, nonEmptyPage, start, env.compiler)
+                    if (result === undefined) {
+                        if (!nonEmptyPage && line.childNodes.length > 0 && line.getBoundingClientRect().height > 0) {
+                            nonEmptyPage = true
+                        }
+                        break
+                    }
+                    start = result
+                    newPage()
                 }
-                break
+                continue
             }
-            cline = result.nline
-            breakPointOffset = result.breakPointOffset
-            newPage()
+        }
+        page.main.append(line)
+        if (!nonEmptyPage || line.getBoundingClientRect().bottom <= page.main.getBoundingClientRect().bottom) {
+            continue
+        }
+        newPage()
+        page.main.append(line)
+        if (line.childNodes.length > 0 && line.getBoundingClientRect().height > 0) {
+            nonEmptyPage = true
         }
     }
     await fillHeaders(pages, env)
