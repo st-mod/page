@@ -285,12 +285,6 @@ function parseBreakDelay(option: STDNUnitOptions[string]) {
     }
     return 1000
 }
-function parseBreakNum(option: STDNUnitOptions[string]) {
-    if (typeof option === 'number' && isFinite(option) && option % 1 === 0 && option >= 1) {
-        return option
-    }
-    return 1
-}
 function parseDotGap(option: STDNUnitOptions[string]) {
     if (typeof option === 'number' && isFinite(option) && option > 0) {
         return option
@@ -609,7 +603,6 @@ export const page: UnitCompiler = async (unit, compiler) => {
     setSize(size, compiler.context.root)
     const staticEnv = env
     const breakDelay = parseBreakDelay(unit.options['break-delay'])
-    const breakNum = parseBreakNum(unit.options['break-num'])
     let observer: MutationObserver | undefined
     let timer: number | undefined
     let listened = false
@@ -625,13 +618,12 @@ export const page: UnitCompiler = async (unit, compiler) => {
             clearInterval(timer)
         }
         await new Promise(r => setTimeout(r, breakDelay))
-        const lines = Array.from(staticContainer.children)
-        for (let i = 0; i < breakNum; i++) {
-            await breakToPages(lines, staticContainer, staticEnv)
-            await new Promise(r => setTimeout(r, 1000))
-        }
+        await breakToPages(Array.from(staticContainer.children), staticContainer, staticEnv)
         for (const listener of staticEnv.pagedListeners) {
             await listener()
+        }
+        if (compiler.context.root !== undefined) {
+            compiler.context.root.dispatchEvent(new Event('adjust', {bubbles: true, composed: true}))
         }
     }
     observer = new MutationObserver(listener)
