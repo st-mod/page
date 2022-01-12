@@ -153,14 +153,15 @@ export function parseSize(option: STDNUnitOptions[string]): Size {
         height: defaultHeight
     }
 }
-let sized = false
+let style: HTMLStyleElement | undefined
 function setSize({width, height}: Size, root: Compiler['context']['root']) {
-    if (sized || root !== undefined) {
+    if (root !== undefined) {
         return
     }
-    sized = true
-    const style = document.createElement('style')
-    style.textContent = `@page {
+    if (style === undefined) {
+        style = document.createElement('style')
+    }
+    const css = `@page {
     margin: 0;
     size: ${width}px ${height}px;
 }
@@ -168,6 +169,9 @@ function setSize({width, height}: Size, root: Compiler['context']['root']) {
 body>.lr-struct>main>article {
     max-width: ${width}px;
 }`
+    if (style.textContent !== css) {
+        style.textContent = css
+    }
     document.head.append(style)
 }
 function parseMargin(option: STDNUnitOptions[string]) {

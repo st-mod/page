@@ -140,14 +140,15 @@ export function parseSize(option) {
         height: defaultHeight
     };
 }
-let sized = false;
+let style;
 function setSize({ width, height }, root) {
-    if (sized || root !== undefined) {
+    if (root !== undefined) {
         return;
     }
-    sized = true;
-    const style = document.createElement('style');
-    style.textContent = `@page {
+    if (style === undefined) {
+        style = document.createElement('style');
+    }
+    const css = `@page {
     margin: 0;
     size: ${width}px ${height}px;
 }
@@ -155,6 +156,9 @@ function setSize({ width, height }, root) {
 body>.lr-struct>main>article {
     max-width: ${width}px;
 }`;
+    if (style.textContent !== css) {
+        style.textContent = css;
+    }
     document.head.append(style);
 }
 function parseMargin(option) {
