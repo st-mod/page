@@ -278,7 +278,7 @@ function parseDotGap(option) {
     if (typeof option === 'number' && isFinite(option) && option > 0) {
         return option;
     }
-    return fontSize;
+    return 1;
 }
 function stdnToInlinePlainStringLine(stdn, compiler) {
     for (const line of stdn) {
