@@ -1,5 +1,7 @@
 import type {STDN, STDNUnit, STDNUnitOptions} from 'stdn'
 import type {Compiler, IndexInfo, UnitCompiler} from '@ddu6/stc'
+import {getScale} from 'st-std/dist/common'
+import {observeFirstConnect} from 'st-std/dist/observe'
 const fontSize = 16
 const defaultWidth = parseLength('210mm')
 const defaultHeight = parseLength('297mm')
@@ -573,7 +575,7 @@ export const page: UnitCompiler = async (unit, compiler) => {
     if (compiler.context.root !== undefined) {
         container = compiler.context.root.querySelector(':host>div')
     } else {
-        container = document.body.querySelector('body>.lr-struct>main>article')
+        container = document.body.querySelector(':scope>.lr-struct>main>article')
     }
     if (container === null) {
         return element
@@ -603,20 +605,7 @@ export const page: UnitCompiler = async (unit, compiler) => {
     setSize(size, compiler.context.root)
     const staticEnv = env
     const breakDelay = parseBreakDelay(unit.options['break-delay'])
-    let observer: MutationObserver | undefined
-    let timer: number | undefined
-    let listened = false
-    const listener = async () => {
-        if (!element.isConnected || listened) {
-            return
-        }
-        listened = true
-        if (observer !== undefined) {
-            observer.disconnect()
-        }
-        if (timer !== undefined) {
-            clearInterval(timer)
-        }
+    observeFirstConnect(async () => {
         await new Promise(r => setTimeout(r, breakDelay))
         await breakToPages(Array.from(staticContainer.children), staticContainer, staticEnv)
         for (const listener of staticEnv.pagedListeners) {
@@ -625,10 +614,7 @@ export const page: UnitCompiler = async (unit, compiler) => {
         if (compiler.context.root !== undefined) {
             compiler.context.root.dispatchEvent(new Event('adjust', {bubbles: true, composed: true}))
         }
-    }
-    observer = new MutationObserver(listener)
-    timer = window.setInterval(listener, 1000)
-    observer.observe(staticContainer, {childList: true, subtree: true})
+    }, element, staticContainer)
     return element
 }
 export const contents: UnitCompiler = async (unit, compiler) => {
@@ -659,6 +645,10 @@ export const contents: UnitCompiler = async (unit, compiler) => {
         content.append(await compiler.compileLine(stdnToInlinePlainStringLine(unit.children, compiler)))
         env.pagedListeners.push(async () => {
             pageIndexEle.textContent = env.idToPageIndex[id] ?? ''
+            const {widthScale} = getScale(tail)
+            if (!isFinite(widthScale)) {
+                return
+            }
             let {left} = item.getBoundingClientRect()
             const {top, left: right} = pageIndexEle.getBoundingClientRect()
             for (const {right, bottom} of content.getClientRects()) {
@@ -669,15 +659,10 @@ export const contents: UnitCompiler = async (unit, compiler) => {
             if (right <= left) {
                 return
             }
-            const fo = element.closest('foreignObject')
-            if (fo === null) {
-                return
-            }
-            const {width} = fo.getBoundingClientRect()
-            const total = Math.floor((right - left) * fo.width.animVal.value / width / dotGap)
+            const total = Math.floor((right - left) * widthScale / dotGap)
             for (let i = 0; i < total; i++) {
                 const dot = document.createElement('div')
-                dot.style.width = `${dotGap}px`
+                dot.style.width = `${dotGap}em`
                 pageIndexEle.before(dot)
             }
         })

@@ -4,7 +4,7 @@
 {global, no-count-inside, demo []}
 {size B5 landscape, margin 3cm 1.5in, binging .4in, header-level 1 2, right-level 1, break-level 2, break-delay 2, page []}
 {class break, h0 [Contents]}
-{dot-gap 8, contents []}
+{dot-gap 0.5, contents []}
 []
 {class right, index 1, break []}
 {abbr {[{i [Abbr]}]}, h1 [Abbreviation]}
@@ -148,7 +148,7 @@ You should try to avoid long paragraph.
     {title [Test]}
     {css-src main.css, ucs-src ucs.js, global []}
     {size A5 landscape, page []}
-    {dot-gap 8, contents []}
+    {dot-gap 0.5, contents []}
     []
     {h1 [Test]}
     {h2 [Test]}
@@ -158,7 +158,7 @@ You should try to avoid long paragraph.
     {title [Test]}
     {css-src main.css, ucs-src ucs.js, global []}
     {size 500px 250px, page []}
-    {dot-gap 8, contents []}
+    {dot-gap 0.5, contents []}
     []
     {h1 [Test]}
     {h2 [Test]}
