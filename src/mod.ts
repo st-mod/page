@@ -219,7 +219,7 @@ function parseMargin(option: STDNUnitOptions[string]) {
 }
 function parseBinging(option: STDNUnitOptions[string]) {
     if (typeof option === 'number') {
-        return option + 'px'
+        return `${option}px`
     }
     if (typeof option === 'string') {
         return option
@@ -597,7 +597,7 @@ export const page: UnitCompiler = async (unit, compiler) => {
         rightHeaderLevel,
         rightLevel,
         breakLevel,
-        headings: compiler.context.indexInfoArray.filter(val => val.orbit === 'heading' || val.unit.tag === 'title'),
+        headings: compiler.context.indexInfoArray.filter(value => value.orbit === 'heading' || value.unit.tag === 'title'),
         idToPageIndex: {},
         pagedListeners: [],
         compiler
