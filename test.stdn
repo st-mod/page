@@ -18,114 +18,114 @@
 {class breakable, table [
     {caption [A caption]}
     {tr [
-        {th [one]}
-        {th [two]}
-        {th [three]}
+        {th [One]}
+        {th [Two]}
+        {th [Three]}
     ]}
     {tr [
-        {td [row 1]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 1]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 2]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 2]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 3]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 3]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 4]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 4]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 5]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 5]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 6]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 6]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 7]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 7]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 8]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 8]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 9]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 9]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 10]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 10]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 11]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 11]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 12]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 12]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 13]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 13]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 14]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 14]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 15]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 15]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 16]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 16]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 17]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 17]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 18]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 18]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 19]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 19]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 20]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 20]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
     {tr [
-        {td [row 21]}
-        {td [some data]}
-        {td [some data]}
+        {td [Row 21]}
+        {td [Some data]}
+        {td [Some data]}
     ]}
 ]}
 []
