@@ -1,4 +1,4 @@
-import type {STDN, STDNUnit, STDNUnitOptions} from 'stdn'
+import type {STDNUnit, STDNUnitOptions} from 'stdn'
 import type {Compiler, IndexInfo, UnitCompiler} from '@ddu6/stc'
 import {getScale} from 'st-std/dist/common'
 import {observeFirstConnect} from 'st-std/dist/observe'
