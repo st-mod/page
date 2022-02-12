@@ -293,44 +293,7 @@ function parseDotGap(option: STDNUnitOptions[string]) {
     }
     return 1
 }
-function stdnToInlinePlainStringLine(stdn: STDN, compiler: Compiler) {
-    for (const line of stdn) {
-        const string = compiler.base.lineToInlinePlainString(line)
-        if (string.length > 0) {
-            return line
-        }
-    }
-    return []
-}
-function removeBefore(node: Node, parent: Node) {
-    while (true) {
-        while (true) {
-            if (node.previousSibling === null) {
-                break
-            }
-            node.previousSibling.remove()
-        }
-        if (node.parentNode === null || node.parentNode === parent) {
-            break
-        }
-        node = node.parentNode
-    }
-}
-function removeAfter(node: Node, parent: Node) {
-    while (true) {
-        while (true) {
-            if (node.nextSibling === null) {
-                break
-            }
-            node.nextSibling.remove()
-        }
-        if (node.parentNode === null || node.parentNode === parent) {
-            break
-        }
-        node = node.parentNode
-    }
-}
-function clipLine(line: Element, start: number, end: number, breakPoints?: NodeListOf<Element>) {
+function clipLine(line: Element, start: number, end: number, compiler: Compiler, breakPoints?: NodeListOf<Element>) {
     if (start === 0 && end === Infinity) {
         return
     }
@@ -340,31 +303,31 @@ function clipLine(line: Element, start: number, end: number, breakPoints?: NodeL
     const startNode = breakPoints[start - 1]
     const endNode = breakPoints[end - 1]
     if (startNode !== undefined) {
-        removeBefore(startNode, line)
+        compiler.base.removeBefore(startNode, line)
         startNode.remove()
     }
     if (endNode !== undefined) {
-        removeAfter(endNode, line)
+        compiler.base.removeAfter(endNode, line)
     }
 }
 async function putUnit(unit: STDNUnit, main: Page['main'], start: number, end: number, compiler: Compiler) {
     const line = (await compiler.compileSTDN([[unit]])).children[0]
-    clipLine(line, start, end)
+    clipLine(line, start, end, compiler)
     main.append(line)
 }
 async function getEnd(unit: STDNUnit, line: Element, main: Page['main'], nonEmptyPage: boolean, start: number, compiler: Compiler) {
     const tmpLine = <Element>line.cloneNode(true)
     const breakPoints = tmpLine.querySelectorAll('.breakable>*')
-    clipLine(tmpLine, start, Infinity, breakPoints)
+    clipLine(tmpLine, start, Infinity, compiler, breakPoints)
     main.append(tmpLine)
     if (tmpLine.getBoundingClientRect().bottom <= main.getBoundingClientRect().bottom) {
         tmpLine.remove()
-        clipLine(line, start, Infinity)
+        clipLine(line, start, Infinity, compiler)
         main.append(line)
         return
     }
     for (let i = breakPoints.length; i > start; i--) {
-        removeAfter(breakPoints[i - 1], tmpLine)
+        compiler.base.removeAfter(breakPoints[i - 1], tmpLine)
         if (tmpLine.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
             continue
         }
@@ -376,7 +339,7 @@ async function getEnd(unit: STDNUnit, line: Element, main: Page['main'], nonEmpt
     if (nonEmptyPage) {
         return start
     }
-    clipLine(line, start, Infinity)
+    clipLine(line, start, Infinity, compiler)
     main.append(line)
 }
 interface Env {
@@ -450,9 +413,9 @@ async function fillHeader(index: number, currentHeadings: (IndexInfo | undefined
         if (typeof abbr === 'string') {
             page.headingContentEle.append(new Text(abbr))
         } else if (typeof abbr === 'object') {
-            page.headingContentEle.append(await env.compiler.compileLine(stdnToInlinePlainStringLine(abbr, env.compiler)))
+            page.headingContentEle.append(await env.compiler.compileLine(env.compiler.base.stdnToInlinePlainStringLine(abbr)))
         } else {
-            page.headingContentEle.append(await env.compiler.compileLine(stdnToInlinePlainStringLine(heading.unit.children, env.compiler)))
+            page.headingContentEle.append(await env.compiler.compileLine(env.compiler.base.stdnToInlinePlainStringLine(heading.unit.children)))
         }
     }
 }
@@ -564,7 +527,7 @@ async function breakToPages(lines: Element[], container: HTMLElement, env: Env) 
     }
     await fillHeaders(pages, env)
 }
-const compilerToEnv = new Map<Compiler, Env | undefined>()
+export const compilerToEnv = new Map<Compiler, Env | undefined>()
 export const page: UnitCompiler = async (unit, compiler) => {
     const element = document.createElement('div')
     let env = compilerToEnv.get(compiler)
@@ -642,7 +605,7 @@ export const contents: UnitCompiler = async (unit, compiler) => {
         item.append(tail)
         tail.append(pageIndexEle)
         indexEle.append(new Text(index.join('.')))
-        content.append(await compiler.compileLine(stdnToInlinePlainStringLine(unit.children, compiler)))
+        content.append(await compiler.compileLine(compiler.base.stdnToInlinePlainStringLine(unit.children)))
         env.pagedListeners.push(async () => {
             pageIndexEle.textContent = env.idToPageIndex[id] ?? ''
             const {widthScale} = getScale(tail)
