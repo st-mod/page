@@ -587,7 +587,7 @@ export const contents: UnitCompiler = async (unit, compiler) => {
         return element
     }
     element.classList.add('breakable')
-    const dotGap = parseDotGap(unit.options['dot-gap'] ?? compiler.extractor.extractLastGlobalOption('dot-gap', 'contents', compiler.context.tagToGlobalOptions))
+    const dotGap = parseDotGap(unit.options['dot-gap'] ?? compiler.context.extractLastGlobalOption('dot-gap', 'contents'))
     for (const {unit, orbit, index, id} of env.headings) {
         if (orbit !== 'heading' || index.length > 3) {
             continue
