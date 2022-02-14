@@ -303,11 +303,11 @@ function clipLine(line: Element, start: number, end: number, compiler: Compiler,
     const startNode = breakPoints[start - 1]
     const endNode = breakPoints[end - 1]
     if (startNode !== undefined) {
-        compiler.base.removeBefore(startNode, line)
+        compiler.dom.removeBefore(startNode, line)
         startNode.remove()
     }
     if (endNode !== undefined) {
-        compiler.base.removeAfter(endNode, line)
+        compiler.dom.removeAfter(endNode, line)
     }
 }
 async function putUnit(unit: STDNUnit, main: Page['main'], start: number, end: number, compiler: Compiler) {
@@ -327,7 +327,7 @@ async function getEnd(unit: STDNUnit, line: Element, main: Page['main'], nonEmpt
         return
     }
     for (let i = breakPoints.length; i > start; i--) {
-        compiler.base.removeAfter(breakPoints[i - 1], tmpLine)
+        compiler.dom.removeAfter(breakPoints[i - 1], tmpLine)
         if (tmpLine.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
             continue
         }
@@ -413,7 +413,7 @@ async function fillHeader(index: number, currentHeadings: (IndexInfo | undefined
         if (typeof abbr === 'string') {
             page.headingContentEle.append(new Text(abbr))
         } else if (typeof abbr === 'object') {
-            page.headingContentEle.append(await env.compiler.compileLine(env.compiler.base.stdnToInlinePlainStringLine(abbr)))
+            page.headingContentEle.append(await env.compiler.compileUnit(abbr))
         } else {
             page.headingContentEle.append(await env.compiler.compileLine(env.compiler.base.stdnToInlinePlainStringLine(heading.unit.children)))
         }

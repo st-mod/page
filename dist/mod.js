@@ -290,11 +290,11 @@ function clipLine(line, start, end, compiler, breakPoints) {
     const startNode = breakPoints[start - 1];
     const endNode = breakPoints[end - 1];
     if (startNode !== undefined) {
-        compiler.base.removeBefore(startNode, line);
+        compiler.dom.removeBefore(startNode, line);
         startNode.remove();
     }
     if (endNode !== undefined) {
-        compiler.base.removeAfter(endNode, line);
+        compiler.dom.removeAfter(endNode, line);
     }
 }
 async function putUnit(unit, main, start, end, compiler) {
@@ -314,7 +314,7 @@ async function getEnd(unit, line, main, nonEmptyPage, start, compiler) {
         return;
     }
     for (let i = breakPoints.length; i > start; i--) {
-        compiler.base.removeAfter(breakPoints[i - 1], tmpLine);
+        compiler.dom.removeAfter(breakPoints[i - 1], tmpLine);
         if (tmpLine.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
             continue;
         }
@@ -382,7 +382,7 @@ async function fillHeader(index, currentHeadings, page, env) {
             page.headingContentEle.append(new Text(abbr));
         }
         else if (typeof abbr === 'object') {
-            page.headingContentEle.append(await env.compiler.compileLine(env.compiler.base.stdnToInlinePlainStringLine(abbr)));
+            page.headingContentEle.append(await env.compiler.compileUnit(abbr));
         }
         else {
             page.headingContentEle.append(await env.compiler.compileLine(env.compiler.base.stdnToInlinePlainStringLine(heading.unit.children)));
