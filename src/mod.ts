@@ -169,7 +169,13 @@ body>.lr-struct>main>article {
     }
     document.head.append(style)
 }
-function parseMargin(option: STDNUnitOptions[string]) {
+interface Margin {
+    marginTop: string,
+    marginRight: string,
+    marginBottom: string,
+    marginLeft: string
+}
+function parseMargin(option: STDNUnitOptions[string]): Margin {
     if (typeof option !== 'string') {
         return {
             marginTop: defaultMarginTop,
@@ -306,16 +312,7 @@ function extractLineIndexToHeadings(context: Context) {
     }
     return out
 }
-interface Page {
-    element: SVGSVGElement
-    headingIndexEle: HTMLSpanElement
-    headingContentEle: HTMLSpanElement
-    main: HTMLElement
-    indexEle: HTMLDivElement
-    index: number
-    frontIndex: number
-}
-function createPage(index: number, frontIndex: number, env: Env): Page {
+function createPage(index: number, frontIndex: number, size: Size, margin: Margin, binging: string) {
     const left = index % 2 === 0
     const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject')
@@ -336,17 +333,17 @@ function createPage(index: number, frontIndex: number, env: Env): Page {
     footer.append(indexEle)
     headingEle.append(headingIndexEle)
     headingEle.append(headingContentEle)
-    element.setAttribute('viewBox', `0 0 ${env.size.width} ${env.size.height}`)
+    element.setAttribute('viewBox', `0 0 ${size.width} ${size.height}`)
     fo.setAttribute('width', '100%')
     fo.setAttribute('height', '100%')
     container.style.fontSize = `${fontSize}px`
-    const innerMargin = `calc(${env.marginLeft} + ${env.binging})`
-    container.style.marginLeft = left ? env.marginRight : innerMargin
-    container.style.marginRight = left ? innerMargin : env.marginRight
-    header.style.height = env.marginTop
+    const innerMargin = `calc(${margin.marginLeft} + ${binging})`
+    container.style.marginLeft = left ? margin.marginRight : innerMargin
+    container.style.marginRight = left ? innerMargin : margin.marginRight
+    header.style.height = margin.marginTop
     main.style.display = 'flow-root'
-    main.style.height = `calc(${env.size.height}px - ${env.marginTop} - ${env.marginBottom})`
-    footer.style.height = env.marginBottom
+    main.style.height = `calc(${size.height}px - ${margin.marginTop} - ${margin.marginBottom})`
+    footer.style.height = margin.marginBottom
     indexEle.textContent = frontIndex.toString()
     return {
         element,
@@ -358,10 +355,8 @@ function createPage(index: number, frontIndex: number, env: Env): Page {
         frontIndex
     }
 }
+type Page = ReturnType<typeof createPage>
 function createEnv(options: STDNUnitOptions, context: Context) {
-    const {marginTop, marginRight, marginBottom, marginLeft} = parseMargin(options.margin)
-    const {leftHeaderLevel, rightHeaderLevel} = parseHeaderLevel(options['header-level'])
-    const {rightLevel, breakLevel} = parseBreakLevel(options['right-level'], options['break-level'])
     const elementToPage = new Map<Element, Page | undefined>()
     const pagedListeners: (() => Promise<void>)[] = []
     const pageIndexToHeadings: (IndexInfo[] | undefined)[] = []
@@ -369,19 +364,14 @@ function createEnv(options: STDNUnitOptions, context: Context) {
     const unitOrLineToPage = new Map<STDNUnit | STDNLine, Page | undefined>()
     return {
         binging: parseBinging(options.binging),
-        breakLevel,
+        breakLevel: parseBreakLevel(options['right-level'], options['break-level']),
         elementToPage,
-        leftHeaderLevel,
+        headerLevel: parseHeaderLevel(options['header-level']),
         lineIndexToHeadings: extractLineIndexToHeadings(context),
-        marginBottom,
-        marginLeft,
-        marginRight,
-        marginTop,
+        margin: parseMargin(options.margin),
         pagedListeners,
         pageIndexToHeadings,
         pages,
-        rightHeaderLevel,
-        rightLevel,
         size: parseSize(options.size),
         unitOrLineToPage
     }
@@ -440,12 +430,12 @@ async function breakToPages(lines: Element[], container: HTMLElement, env: Env, 
     container.innerHTML = ''
     let currentIndex = 1
     let frontIndex = 1
-    let page = createPage(currentIndex, frontIndex, env)
+    let page = createPage(currentIndex, frontIndex, env.size, env.margin, env.binging)
     env.pages.push(page)
     container.append(page.element)
     let nonEmptyPage = false
     function newPage() {
-        env.pages.push(page = createPage(++currentIndex, ++frontIndex, env))
+        env.pages.push(page = createPage(++currentIndex, ++frontIndex, env.size, env.margin, env.binging))
         container.append(page.element)
         nonEmptyPage = false
     }
@@ -459,7 +449,7 @@ async function breakToPages(lines: Element[], container: HTMLElement, env: Env, 
         if (line.children.length > 0) {
             const first = line.children[0]
             if (first.classList.contains('break')) {
-                if ((lineLevel <= env.rightLevel || first.classList.contains('right')) && currentIndex % 2 === 1) {
+                if ((lineLevel <= env.breakLevel.rightLevel || first.classList.contains('right')) && currentIndex % 2 === 1) {
                     newPage()
                 }
                 const info = compiler.context.idToIndexInfo[first.id]
@@ -472,11 +462,11 @@ async function breakToPages(lines: Element[], container: HTMLElement, env: Env, 
                     }
                 }
                 newPage()
-            } else if (lineLevel <= env.breakLevel) {
+            } else if (lineLevel <= env.breakLevel.breakLevel) {
                 if (nonEmptyPage) {
                     newPage()
                 }
-                if (lineLevel <= env.rightLevel && currentIndex % 2 === 0) {
+                if (lineLevel <= env.breakLevel.rightLevel && currentIndex % 2 === 0) {
                     newPage()
                 }
             }
@@ -570,7 +560,7 @@ async function fillHeaders(env: Env, compiler: Compiler) {
                 currentHeadings[heading.index.length] = heading
             }
         }
-        const level = index % 2 === 0 ? env.leftHeaderLevel : env.rightHeaderLevel
+        const level = index % 2 === 0 ? env.headerLevel.leftHeaderLevel : env.headerLevel.rightHeaderLevel
         const heading = currentHeadings[level]
         if (heading === undefined) {
             continue
