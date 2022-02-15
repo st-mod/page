@@ -595,6 +595,7 @@ export const page = async (unit, compiler) => {
         for (const listener of staticEnv.pagedListeners) {
             await listener();
         }
+        staticEnv.pagedListeners = [];
         if (compiler.context.root !== undefined) {
             compiler.context.root.dispatchEvent(new Event('adjust', { bubbles: true, composed: true }));
         }
