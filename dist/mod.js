@@ -497,7 +497,6 @@ async function breakToPages(lines, container, env, compiler) {
     setElementToPage(env);
     setUnitOrLineToPage(env, compiler);
     setPageIndexToHeadings(env, compiler.context);
-    console.log(env);
     await fillHeaders(env, compiler);
 }
 function setElementToPage(env) {

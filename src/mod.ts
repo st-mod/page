@@ -512,7 +512,6 @@ async function breakToPages(lines: Element[], container: HTMLElement, env: Env, 
     setElementToPage(env)
     setUnitOrLineToPage(env, compiler)
     setPageIndexToHeadings(env, compiler.context)
-    console.log(env)
     await fillHeaders(env, compiler)
 }
 function setElementToPage(env: Env) {
