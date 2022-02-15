@@ -512,6 +512,7 @@ async function breakToPages(lines: Element[], container: HTMLElement, env: Env, 
     setElementToPage(env)
     setUnitOrLineToPage(env, compiler)
     setPageIndexToHeadings(env, compiler.context)
+    console.log(env)
     await fillHeaders(env, compiler)
 }
 function setElementToPage(env: Env) {
@@ -548,17 +549,21 @@ function setPageIndexToHeadings(env: Env, context: Context) {
     }
 }
 async function fillHeaders(env: Env, compiler: Compiler) {
+    const currentHeadings: (IndexInfo | undefined)[] = [compiler.context.titleInfo]
     for (const page of env.pages) {
         const {headingIndexEle, headingContentEle, index} = page
         const headings = env.pageIndexToHeadings[index]
         if (headings === undefined) {
             continue
         }
-        const level = index % 2 === 0 ? env.leftHeaderLevel : env.rightHeaderLevel
-        let heading = compiler.context.titleInfo
-        if (level > 0) {
-            heading = headings.find(value => value.index.length === level)
+        for (const heading of headings) {
+            for (let i = heading.index.length + 1; i < currentHeadings.length; i++) {
+                currentHeadings[i] = undefined
+            }
+            currentHeadings[heading.index.length] = heading
         }
+        const level = index % 2 === 0 ? env.leftHeaderLevel : env.rightHeaderLevel
+        const heading = currentHeadings[level]
         if (heading === undefined) {
             continue
         }
