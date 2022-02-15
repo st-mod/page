@@ -513,9 +513,19 @@ function setElementToPage(env) {
 }
 function setUnitOrLineToPage(env, compiler) {
     compiler.unitOrLineToElements.forEach((value, key) => {
-        if (value !== undefined && value.length > 0) {
-            env.unitOrLineToPage.set(key, env.elementToPage.get(value[0]));
+        if (value === undefined || value.length === 0) {
+            return;
         }
+        let minIndex = Infinity;
+        let minPage;
+        for (const element of value) {
+            const page = env.elementToPage.get(element);
+            if (page !== undefined && page.index < minIndex) {
+                minIndex = page.index;
+                minPage = page;
+            }
+        }
+        env.unitOrLineToPage.set(key, minPage);
     });
 }
 function setPageIndexToHeadings(env, context) {
@@ -537,14 +547,13 @@ async function fillHeaders(env, compiler) {
     for (const page of env.pages) {
         const { headingIndexEle, headingContentEle, index } = page;
         const headings = env.pageIndexToHeadings[index];
-        if (headings === undefined) {
-            continue;
-        }
-        for (const heading of headings) {
-            for (let i = heading.index.length + 1; i < currentHeadings.length; i++) {
-                currentHeadings[i] = undefined;
+        if (headings !== undefined) {
+            for (const heading of headings) {
+                for (let i = heading.index.length + 1; i < currentHeadings.length; i++) {
+                    currentHeadings[i] = undefined;
+                }
+                currentHeadings[heading.index.length] = heading;
             }
-            currentHeadings[heading.index.length] = heading;
         }
         const level = index % 2 === 0 ? env.leftHeaderLevel : env.rightHeaderLevel;
         const heading = currentHeadings[level];
@@ -552,11 +561,11 @@ async function fillHeaders(env, compiler) {
             continue;
         }
         if (level > 0) {
-            headingIndexEle.append(new Text(heading.index.join('.')));
+            headingIndexEle.append(heading.index.join('.'));
         }
         const { abbr } = heading.unit.options;
         if (typeof abbr === 'string') {
-            headingContentEle.append(new Text(abbr));
+            headingContentEle.append(abbr);
         }
         else if (typeof abbr === 'object') {
             headingContentEle.append(await compiler.compileUnit(abbr));
@@ -621,7 +630,7 @@ export const contents = async (unit, compiler) => {
         item.append(content);
         item.append(tail);
         tail.append(pageIndexEle);
-        indexEle.append(new Text(index.join('.')));
+        indexEle.append(index.join('.'));
         content.append(await compiler.compileLine(compiler.base.stdnToInlinePlainStringLine(unit.children)));
         env.pagedListeners.push(async () => {
             const page = env.unitOrLineToPage.get(unit);

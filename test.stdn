@@ -7,7 +7,7 @@
 {dot-gap 0.5, contents []}
 []
 {class right, index 1, break []}
-{abbr {[{i [Abbr]}]}, h1 [Abbreviation]}
+{abbr {i [Abbr]}, h1 [Abbreviation]}
 []
 {h1 [Break]}
 {class break right, h2 [Right]}
