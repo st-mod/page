@@ -1,11 +1,12 @@
 import type { STDNUnitOptions } from 'stdn';
-import type { Compiler, IndexInfo, UnitCompiler } from '@ddu6/stc';
+import type { Compiler, Context, IndexInfo, UnitCompiler } from '@ddu6/stc';
 interface Size {
     width: number;
     height: number;
 }
 export declare function parseLength(option: STDNUnitOptions[string]): number;
 export declare function parseSize(option: STDNUnitOptions[string]): Size;
+declare function extractLineIndexToHeadings(context: Context): (IndexInfo[] | undefined)[];
 interface Env {
     readonly width: number;
     readonly height: number;
@@ -18,12 +19,11 @@ interface Env {
     readonly rightHeaderLevel: number;
     readonly rightLevel: number;
     readonly breakLevel: number;
-    readonly headings: IndexInfo[];
     readonly idToPageIndex: {
         [key: string]: string | undefined;
     };
+    readonly lineIndexToHeadings: ReturnType<typeof extractLineIndexToHeadings>;
     readonly pagedListeners: (() => Promise<void>)[];
-    readonly compiler: Compiler;
 }
 export declare const compilerToEnv: Map<Compiler, Env | undefined>;
 export declare const page: UnitCompiler;
