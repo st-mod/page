@@ -1,31 +1,38 @@
-import type { STDNUnitOptions } from 'stdn';
-import type { Compiler, Context, IndexInfo, UnitCompiler } from '@ddu6/stc';
+import type { STDNLine, STDNUnit, STDNUnitOptions } from 'stdn';
+import type { Compiler, IndexInfo, UnitCompiler } from '@ddu6/stc';
 interface Size {
     width: number;
     height: number;
 }
 export declare function parseLength(option: STDNUnitOptions[string]): number;
 export declare function parseSize(option: STDNUnitOptions[string]): Size;
-declare function extractLineIndexToHeadings(context: Context): (IndexInfo[] | undefined)[];
-interface Env {
-    readonly width: number;
-    readonly height: number;
-    readonly marginTop: string;
-    readonly marginRight: string;
-    readonly marginBottom: string;
-    readonly marginLeft: string;
-    readonly binging: string;
-    readonly leftHeaderLevel: number;
-    readonly rightHeaderLevel: number;
-    readonly rightLevel: number;
-    readonly breakLevel: number;
-    readonly idToPageIndex: {
-        [key: string]: string | undefined;
-    };
-    readonly lineIndexToHeadings: ReturnType<typeof extractLineIndexToHeadings>;
-    readonly pagedListeners: (() => Promise<void>)[];
+interface Page {
+    element: SVGSVGElement;
+    headingIndexEle: HTMLSpanElement;
+    headingContentEle: HTMLSpanElement;
+    main: HTMLElement;
+    indexEle: HTMLDivElement;
+    index: number;
+    frontIndex: number;
 }
-export declare const compilerToEnv: Map<Compiler, Env | undefined>;
+export declare const compilerToEnv: Map<Compiler, {
+    binging: string;
+    breakLevel: number;
+    elementToPage: Map<Element, Page | undefined>;
+    leftHeaderLevel: number;
+    lineIndexToHeadings: (IndexInfo[] | undefined)[];
+    marginBottom: string;
+    marginLeft: string;
+    marginRight: string;
+    marginTop: string;
+    pagedListeners: (() => Promise<void>)[];
+    pageIndexToHeadings: (IndexInfo[] | undefined)[];
+    pages: Page[];
+    rightHeaderLevel: number;
+    rightLevel: number;
+    size: Size;
+    unitOrLineToPage: Map<STDNUnit | STDNLine, Page | undefined>;
+} | undefined>;
 export declare const page: UnitCompiler;
 export declare const contents: UnitCompiler;
 export declare const h0: UnitCompiler;

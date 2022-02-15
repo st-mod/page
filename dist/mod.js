@@ -300,6 +300,77 @@ function extractLineIndexToHeadings(context) {
     }
     return out;
 }
+function createPage(index, frontIndex, env) {
+    const left = index % 2 === 0;
+    const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+    const container = document.createElement('div');
+    const header = document.createElement('header');
+    const main = document.createElement('main');
+    const footer = document.createElement('footer');
+    const headingEle = document.createElement('div');
+    const indexEle = document.createElement('div');
+    const headingIndexEle = document.createElement('span');
+    const headingContentEle = document.createElement('span');
+    element.append(fo);
+    fo.append(container);
+    container.append(header);
+    container.append(main);
+    container.append(footer);
+    header.append(headingEle);
+    footer.append(indexEle);
+    headingEle.append(headingIndexEle);
+    headingEle.append(headingContentEle);
+    element.setAttribute('viewBox', `0 0 ${env.size.width} ${env.size.height}`);
+    fo.setAttribute('width', '100%');
+    fo.setAttribute('height', '100%');
+    container.style.fontSize = `${fontSize}px`;
+    const innerMargin = `calc(${env.marginLeft} + ${env.binging})`;
+    container.style.marginLeft = left ? env.marginRight : innerMargin;
+    container.style.marginRight = left ? innerMargin : env.marginRight;
+    header.style.height = env.marginTop;
+    main.style.display = 'flow-root';
+    main.style.height = `calc(${env.size.height}px - ${env.marginTop} - ${env.marginBottom})`;
+    footer.style.height = env.marginBottom;
+    indexEle.textContent = frontIndex.toString();
+    return {
+        element,
+        headingIndexEle,
+        headingContentEle,
+        main,
+        indexEle,
+        index,
+        frontIndex
+    };
+}
+function createEnv(options, context) {
+    const { marginTop, marginRight, marginBottom, marginLeft } = parseMargin(options.margin);
+    const { leftHeaderLevel, rightHeaderLevel } = parseHeaderLevel(options['header-level']);
+    const { rightLevel, breakLevel } = parseBreakLevel(options['right-level'], options['break-level']);
+    const elementToPage = new Map();
+    const pagedListeners = [];
+    const pageIndexToHeadings = [];
+    const pages = [];
+    const unitOrLineToPage = new Map();
+    return {
+        binging: parseBinging(options.binging),
+        breakLevel,
+        elementToPage,
+        leftHeaderLevel,
+        lineIndexToHeadings: extractLineIndexToHeadings(context),
+        marginBottom,
+        marginLeft,
+        marginRight,
+        marginTop,
+        pagedListeners,
+        pageIndexToHeadings,
+        pages,
+        rightHeaderLevel,
+        rightLevel,
+        size: parseSize(options.size),
+        unitOrLineToPage
+    };
+}
 function clipLine(line, start, end, compiler, breakPoints) {
     if (start === 0 && end === Infinity) {
         return;
@@ -349,102 +420,16 @@ async function getEnd(unit, line, main, nonEmptyPage, start, compiler) {
     clipLine(line, start, Infinity, compiler);
     main.append(line);
 }
-function createPage(index, env) {
-    const left = index % 2 === 0;
-    const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-    const container = document.createElement('div');
-    const header = document.createElement('header');
-    const main = document.createElement('main');
-    const footer = document.createElement('footer');
-    const headingEle = document.createElement('div');
-    const indexEle = document.createElement('div');
-    const headingIndexEle = document.createElement('span');
-    const headingContentEle = document.createElement('span');
-    element.append(fo);
-    fo.append(container);
-    container.append(header);
-    container.append(main);
-    container.append(footer);
-    header.append(headingEle);
-    footer.append(indexEle);
-    headingEle.append(headingIndexEle);
-    headingEle.append(headingContentEle);
-    element.setAttribute('viewBox', `0 0 ${env.width} ${env.height}`);
-    fo.setAttribute('width', '100%');
-    fo.setAttribute('height', '100%');
-    container.style.fontSize = `${fontSize}px`;
-    const innerMargin = `calc(${env.marginLeft} + ${env.binging})`;
-    container.style.marginLeft = left ? env.marginRight : innerMargin;
-    container.style.marginRight = left ? innerMargin : env.marginRight;
-    header.style.height = env.marginTop;
-    main.style.display = 'flow-root';
-    main.style.height = `calc(${env.height}px - ${env.marginTop} - ${env.marginBottom})`;
-    footer.style.height = env.marginBottom;
-    indexEle.textContent = index.toString();
-    return {
-        element,
-        headingIndexEle,
-        headingContentEle,
-        main,
-        indexEle
-    };
-}
-async function fillHeader(index, currentHeadings, page, env, compiler) {
-    const level = index % 2 === 0 ? env.leftHeaderLevel : env.rightHeaderLevel;
-    const heading = currentHeadings[level];
-    if (heading !== undefined) {
-        if (level > 0) {
-            page.headingIndexEle.append(new Text(heading.index.join('.')));
-        }
-        const { abbr } = heading.unit.options;
-        if (typeof abbr === 'string') {
-            page.headingContentEle.append(new Text(abbr));
-        }
-        else if (typeof abbr === 'object') {
-            page.headingContentEle.append(await compiler.compileUnit(abbr));
-        }
-        else {
-            page.headingContentEle.append(await compiler.compileLine(compiler.base.stdnToInlinePlainStringLine(heading.unit.children)));
-        }
-    }
-}
-function extractIdToPage(pages, compiler) {
-}
-async function fillHeaders(pages, env, compiler) {
-    const currentHeadings = [compiler.context.titleInfo];
-    let rheadings = compiler.context.headings;
-    let index = 0;
-    for (const page of pages) {
-        const nrheadings = [];
-        for (const info of rheadings) {
-            const { id, index, orbit } = info;
-            if (page.main.querySelector(`[id=${JSON.stringify(id)}]`) === null) {
-                nrheadings.push(info);
-                continue;
-            }
-            env.idToPageIndex[id] = page.indexEle.textContent ?? undefined;
-            const level = orbit === 'heading' ? index.length : 0;
-            for (let i = level + 1; i < currentHeadings.length; i++) {
-                currentHeadings[i] = undefined;
-            }
-            currentHeadings[level] = info;
-        }
-        rheadings = nrheadings;
-        await fillHeader(++index, currentHeadings, page, env, compiler);
-    }
-}
 async function breakToPages(lines, container, env, compiler) {
     container.innerHTML = '';
-    let index0 = 1;
-    let realIndex = 1;
-    let page = createPage(realIndex, env);
-    const pages = [page];
+    let currentIndex = 1;
+    let frontIndex = 1;
+    let page = createPage(currentIndex, frontIndex, env);
+    env.pages.push(page);
     container.append(page.element);
     let nonEmptyPage = false;
     function newPage() {
-        index0++;
-        pages.push(page = createPage(++realIndex, env));
+        env.pages.push(page = createPage(++currentIndex, ++frontIndex, env));
         container.append(page.element);
         nonEmptyPage = false;
     }
@@ -458,7 +443,7 @@ async function breakToPages(lines, container, env, compiler) {
         if (line.children.length > 0) {
             const first = line.children[0];
             if (first.classList.contains('break')) {
-                if ((lineLevel <= env.rightLevel || first.classList.contains('right')) && index0 % 2 === 1) {
+                if ((lineLevel <= env.rightLevel || first.classList.contains('right')) && currentIndex % 2 === 1) {
                     newPage();
                 }
                 const info = compiler.context.idToIndexInfo[first.id];
@@ -466,7 +451,7 @@ async function breakToPages(lines, container, env, compiler) {
                     if (info.unit.tag === 'break') {
                         const { index } = info.unit.options;
                         if (typeof index === 'number' && isFinite(index) && index % 1 === 0 && index >= 1) {
-                            realIndex = index - 1;
+                            frontIndex = index - 1;
                         }
                     }
                 }
@@ -476,7 +461,7 @@ async function breakToPages(lines, container, env, compiler) {
                 if (nonEmptyPage) {
                     newPage();
                 }
-                if (lineLevel <= env.rightLevel && index0 % 2 === 0) {
+                if (lineLevel <= env.rightLevel && currentIndex % 2 === 0) {
                     newPage();
                 }
             }
@@ -509,7 +494,73 @@ async function breakToPages(lines, container, env, compiler) {
             nonEmptyPage = true;
         }
     }
-    await fillHeaders(pages, env, compiler);
+    setElementToPage(env);
+    setUnitOrLineToPage(env, compiler);
+    setPageIndexToHeadings(env, compiler.context);
+    await fillHeaders(env, compiler);
+}
+function setElementToPage(env) {
+    for (const page of env.pages) {
+        const walker = document.createTreeWalker(page.main, NodeFilter.SHOW_ELEMENT);
+        while (true) {
+            const node = walker.nextNode();
+            if (!(node instanceof Element)) {
+                break;
+            }
+            env.elementToPage.set(node, page);
+        }
+    }
+}
+function setUnitOrLineToPage(env, compiler) {
+    compiler.unitOrLineToElements.forEach((value, key) => {
+        if (value !== undefined && value.length > 0) {
+            env.unitOrLineToPage.set(key, env.elementToPage.get(value[0]));
+        }
+    });
+}
+function setPageIndexToHeadings(env, context) {
+    for (const heading of context.headings) {
+        const page = env.unitOrLineToPage.get(heading.unit);
+        if (page === undefined) {
+            continue;
+        }
+        const headings = env.pageIndexToHeadings[page.index];
+        if (headings === undefined) {
+            env.pageIndexToHeadings[page.index] = [heading];
+            continue;
+        }
+        headings.push(heading);
+    }
+}
+async function fillHeaders(env, compiler) {
+    for (const page of env.pages) {
+        const { headingIndexEle, headingContentEle, index } = page;
+        const headings = env.pageIndexToHeadings[index];
+        if (headings === undefined) {
+            continue;
+        }
+        const level = index % 2 === 0 ? env.leftHeaderLevel : env.rightHeaderLevel;
+        let heading = compiler.context.titleInfo;
+        if (level > 0) {
+            heading = headings.find(value => value.index.length === level);
+        }
+        if (heading === undefined) {
+            continue;
+        }
+        if (level > 0) {
+            headingIndexEle.append(new Text(heading.index.join('.')));
+        }
+        const { abbr } = heading.unit.options;
+        if (typeof abbr === 'string') {
+            headingContentEle.append(new Text(abbr));
+        }
+        else if (typeof abbr === 'object') {
+            headingContentEle.append(await compiler.compileUnit(abbr));
+        }
+        else {
+            headingContentEle.append(await compiler.compileLine(compiler.base.stdnToInlinePlainStringLine(heading.unit.children)));
+        }
+    }
 }
 export const compilerToEnv = new Map();
 export const page = async (unit, compiler) => {
@@ -529,27 +580,8 @@ export const page = async (unit, compiler) => {
         return element;
     }
     const staticContainer = container;
-    const size = parseSize(unit.options.size);
-    const { marginTop, marginRight, marginBottom, marginLeft } = parseMargin(unit.options.margin);
-    const { leftHeaderLevel, rightHeaderLevel } = parseHeaderLevel(unit.options['header-level']);
-    const { rightLevel, breakLevel } = parseBreakLevel(unit.options['right-level'], unit.options['break-level']);
-    compilerToEnv.set(compiler, env = {
-        width: size.width,
-        height: size.height,
-        marginTop,
-        marginRight,
-        marginBottom,
-        marginLeft,
-        binging: parseBinging(unit.options.binging),
-        leftHeaderLevel,
-        rightHeaderLevel,
-        rightLevel,
-        breakLevel,
-        idToPageIndex: {},
-        lineIndexToHeadings: extractLineIndexToHeadings(compiler.context),
-        pagedListeners: []
-    });
-    setSize(size, compiler.context.root);
+    compilerToEnv.set(compiler, env = createEnv(unit.options, compiler.context));
+    setSize(env.size, compiler.context.root);
     const staticEnv = env;
     const breakDelay = parseBreakDelay(unit.options['break-delay']);
     observeFirstConnect(async () => {
@@ -588,7 +620,10 @@ export const contents = async (unit, compiler) => {
         indexEle.append(new Text(index.join('.')));
         content.append(await compiler.compileLine(compiler.base.stdnToInlinePlainStringLine(unit.children)));
         env.pagedListeners.push(async () => {
-            pageIndexEle.textContent = env.idToPageIndex[id] ?? '';
+            const page = env.unitOrLineToPage.get(unit);
+            if (page !== undefined) {
+                pageIndexEle.textContent = page.frontIndex.toString();
+            }
             const { widthScale } = getScale(tail);
             if (!isFinite(widthScale)) {
                 return;
