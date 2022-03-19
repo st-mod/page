@@ -1,5 +1,5 @@
 {title [Test]}
-{mod demo@0.12.1, global []}
+{mod demo@0.12.2, global []}
 {css-src main.css, ucs-src ucs.js, global []}
 {global, no-count-inside, demo []}
 {size B5 landscape, margin 3cm 1.5in, binging .4in, header-level 1 2, right-level 1, break-level 2, break-delay 2, page []}
