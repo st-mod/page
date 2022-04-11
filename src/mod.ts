@@ -447,19 +447,14 @@ async function breakToPages(lines: Element[], container: HTMLElement, env: Env, 
             lineLevel = Math.max(...headings.map(value => value.index.length))
         }
         if (line.children.length > 0) {
-            const first = line.children[0]
-            if (first.classList.contains('break')) {
-                if ((lineLevel <= env.breakLevel.rightLevel || first.classList.contains('right')) && currentIndex % 2 === 1) {
+            const element = line.querySelector('.break')
+            if (element !== null) {
+                if ((lineLevel <= env.breakLevel.rightLevel || element.classList.contains('right')) && currentIndex % 2 === 1) {
                     newPage()
                 }
-                const info = compiler.context.idToIndexInfo[first.id]
-                if (info !== undefined) {
-                    if (info.unit.tag === 'break') {
-                        const {index} = info.unit.options
-                        if (typeof index === 'number' && isFinite(index) && index % 1 === 0 && index >= 1) {
-                            frontIndex = index - 1
-                        }
-                    }
+                const index = element.getAttribute('index') ?? element.getAttribute('data-index')
+                if (index !== null && /^[1-9]\d*$/.test(index)) {
+                    frontIndex = Number(index) - 1
                 }
                 newPage()
             } else if (lineLevel <= env.breakLevel.breakLevel) {
