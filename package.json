@@ -1,6 +1,6 @@
 {
   "name": "@ddu6/page",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "A stdn module for page breaking",
   "main": "dist/mod.js",
   "scripts": {
