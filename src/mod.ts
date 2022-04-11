@@ -382,7 +382,7 @@ function clipLine(line: Element, start: number, end: number, compiler: Compiler,
         return
     }
     if (breakPoints === undefined) {
-        breakPoints = line.querySelectorAll('.breakable>*')
+        breakPoints = line.querySelectorAll('.breakable>*, .break')
     }
     const startNode = breakPoints[start - 1]
     const endNode = breakPoints[end - 1]
@@ -401,16 +401,29 @@ async function putUnit(unit: STDNUnit, main: Page['main'], start: number, end: n
 }
 async function getEnd(unit: STDNUnit, line: Element, main: Page['main'], nonEmptyPage: boolean, start: number, compiler: Compiler) {
     const tmpLine = <Element>line.cloneNode(true)
-    const breakPoints = tmpLine.querySelectorAll('.breakable>*')
+    const breakPoints = tmpLine.querySelectorAll('.breakable>*, .break')
     clipLine(tmpLine, start, Infinity, compiler, breakPoints)
     main.append(tmpLine)
     if (tmpLine.getBoundingClientRect().bottom <= main.getBoundingClientRect().bottom) {
         tmpLine.remove()
+        for (let i = start; i < breakPoints.length; i++) {
+            if (breakPoints[i].classList.contains('break')) {
+                await putUnit(unit, main, start, i + 1, compiler)
+                return i + 1
+            }
+        }
         clipLine(line, start, Infinity, compiler)
         main.append(line)
         return
     }
-    for (let i = breakPoints.length; i > start; i--) {
+    let end = breakPoints.length
+    for (let i = start; i < breakPoints.length; i++) {
+        if (breakPoints[i].classList.contains('break')) {
+            end = i + 1
+            break
+        }
+    }
+    for (let i = end; i > start; i--) {
         compiler.dom.removeAfter(breakPoints[i - 1], tmpLine)
         if (tmpLine.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
             continue

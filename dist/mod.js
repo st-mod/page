@@ -368,7 +368,7 @@ function clipLine(line, start, end, compiler, breakPoints) {
         return;
     }
     if (breakPoints === undefined) {
-        breakPoints = line.querySelectorAll('.breakable>*');
+        breakPoints = line.querySelectorAll('.breakable>*, .break');
     }
     const startNode = breakPoints[start - 1];
     const endNode = breakPoints[end - 1];
@@ -387,16 +387,29 @@ async function putUnit(unit, main, start, end, compiler) {
 }
 async function getEnd(unit, line, main, nonEmptyPage, start, compiler) {
     const tmpLine = line.cloneNode(true);
-    const breakPoints = tmpLine.querySelectorAll('.breakable>*');
+    const breakPoints = tmpLine.querySelectorAll('.breakable>*, .break');
     clipLine(tmpLine, start, Infinity, compiler, breakPoints);
     main.append(tmpLine);
     if (tmpLine.getBoundingClientRect().bottom <= main.getBoundingClientRect().bottom) {
         tmpLine.remove();
+        for (let i = start; i < breakPoints.length; i++) {
+            if (breakPoints[i].classList.contains('break')) {
+                await putUnit(unit, main, start, i + 1, compiler);
+                return i + 1;
+            }
+        }
         clipLine(line, start, Infinity, compiler);
         main.append(line);
         return;
     }
-    for (let i = breakPoints.length; i > start; i--) {
+    let end = breakPoints.length;
+    for (let i = start; i < breakPoints.length; i++) {
+        if (breakPoints[i].classList.contains('break')) {
+            end = i + 1;
+            break;
+        }
+    }
+    for (let i = end; i > start; i--) {
         compiler.dom.removeAfter(breakPoints[i - 1], tmpLine);
         if (tmpLine.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
             continue;
@@ -433,14 +446,19 @@ async function breakToPages(lines, container, env, compiler) {
             lineLevel = Math.max(...headings.map(value => value.index.length));
         }
         if (line.children.length > 0) {
-            const element = line.querySelector('.break');
-            if (element !== null) {
-                if ((lineLevel <= env.breakLevel.rightLevel || element.classList.contains('right')) && currentIndex % 2 === 1) {
+            const first = line.children[0];
+            if (first.classList.contains('break')) {
+                if ((lineLevel <= env.breakLevel.rightLevel || first.classList.contains('right')) && currentIndex % 2 === 1) {
                     newPage();
                 }
-                const index = element.getAttribute('index') ?? element.getAttribute('data-index');
-                if (index !== null && /^[1-9]\d*$/.test(index)) {
-                    frontIndex = Number(index) - 1;
+                const info = compiler.context.idToIndexInfo[first.id];
+                if (info !== undefined) {
+                    if (info.unit.tag === 'break') {
+                        const { index } = info.unit.options;
+                        if (typeof index === 'number' && isFinite(index) && index % 1 === 0 && index >= 1) {
+                            frontIndex = index - 1;
+                        }
+                    }
                 }
                 newPage();
             }
