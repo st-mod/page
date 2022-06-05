@@ -146,7 +146,7 @@ You should try to avoid long paragraph.
 {h1 [Demo]}
 {demo [
     {title [Test]}
-    {css-src main.css, ucs-src ucs.js, global []}
+    {css-src ../main.css, ucs-src ../ucs.js, global []}
     {size A5 landscape, page []}
     {contents []}
     []
@@ -156,7 +156,7 @@ You should try to avoid long paragraph.
 []
 {demo [
     {title [Test]}
-    {css-src main.css, ucs-src ucs.js, global []}
+    {css-src ../main.css, ucs-src ../ucs.js, global []}
     {size 500px 250px, page []}
     {contents []}
     []
