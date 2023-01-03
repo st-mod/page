@@ -1,3 +1,12 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import { getScale } from 'st-std/dist/common';
 import { observeFirstConnect } from 'st-std/dist/observe';
 const fontSize = 16;
@@ -380,129 +389,135 @@ function clipLine(line, start, end, compiler, breakPoints) {
         compiler.dom.removeAfter(endNode, line);
     }
 }
-async function putUnit(unit, main, start, end, compiler) {
-    const line = (await compiler.compileSTDN([[unit]])).children[0];
-    clipLine(line, start, end, compiler);
-    main.append(line);
+function putUnit(unit, main, start, end, compiler) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const line = (yield compiler.compileSTDN([[unit]])).children[0];
+        clipLine(line, start, end, compiler);
+        main.append(line);
+    });
 }
-async function getEnd(unit, line, main, nonEmptyPage, start, compiler) {
-    const tmpLine = line.cloneNode(true);
-    const breakPoints = tmpLine.querySelectorAll('.breakable>*, .break');
-    clipLine(tmpLine, start, Infinity, compiler, breakPoints);
-    main.append(tmpLine);
-    if (tmpLine.getBoundingClientRect().bottom <= main.getBoundingClientRect().bottom) {
-        tmpLine.remove();
+function getEnd(unit, line, main, nonEmptyPage, start, compiler) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const tmpLine = line.cloneNode(true);
+        const breakPoints = tmpLine.querySelectorAll('.breakable>*, .break');
+        clipLine(tmpLine, start, Infinity, compiler, breakPoints);
+        main.append(tmpLine);
+        if (tmpLine.getBoundingClientRect().bottom <= main.getBoundingClientRect().bottom) {
+            tmpLine.remove();
+            for (let i = start; i < breakPoints.length; i++) {
+                if (breakPoints[i].classList.contains('break')) {
+                    yield putUnit(unit, main, start, i + 1, compiler);
+                    return i + 1;
+                }
+            }
+            clipLine(line, start, Infinity, compiler);
+            main.append(line);
+            return;
+        }
+        let end = breakPoints.length;
         for (let i = start; i < breakPoints.length; i++) {
             if (breakPoints[i].classList.contains('break')) {
-                await putUnit(unit, main, start, i + 1, compiler);
-                return i + 1;
+                end = i + 1;
+                break;
             }
+        }
+        for (let i = end; i > start; i--) {
+            compiler.dom.removeAfter(breakPoints[i - 1], tmpLine);
+            if (tmpLine.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
+                continue;
+            }
+            tmpLine.remove();
+            yield putUnit(unit, main, start, i, compiler);
+            return i;
+        }
+        tmpLine.remove();
+        if (nonEmptyPage) {
+            return start;
         }
         clipLine(line, start, Infinity, compiler);
         main.append(line);
-        return;
-    }
-    let end = breakPoints.length;
-    for (let i = start; i < breakPoints.length; i++) {
-        if (breakPoints[i].classList.contains('break')) {
-            end = i + 1;
-            break;
-        }
-    }
-    for (let i = end; i > start; i--) {
-        compiler.dom.removeAfter(breakPoints[i - 1], tmpLine);
-        if (tmpLine.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom) {
-            continue;
-        }
-        tmpLine.remove();
-        await putUnit(unit, main, start, i, compiler);
-        return i;
-    }
-    tmpLine.remove();
-    if (nonEmptyPage) {
-        return start;
-    }
-    clipLine(line, start, Infinity, compiler);
-    main.append(line);
+    });
 }
-async function breakToPages(lines, container, env, compiler) {
-    container.innerHTML = '';
-    let currentIndex = 1;
-    let frontIndex = 1;
-    let page = createPage(currentIndex, frontIndex, env.size, env.margin, env.binging);
-    env.pages.push(page);
-    container.append(page.element);
-    let nonEmptyPage = false;
-    function newPage() {
-        env.pages.push(page = createPage(++currentIndex, ++frontIndex, env.size, env.margin, env.binging));
+function breakToPages(lines, container, env, compiler) {
+    return __awaiter(this, void 0, void 0, function* () {
+        container.innerHTML = '';
+        let currentIndex = 1;
+        let frontIndex = 1;
+        let page = createPage(currentIndex, frontIndex, env.size, env.margin, env.binging);
+        env.pages.push(page);
         container.append(page.element);
-        nonEmptyPage = false;
-    }
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const headings = env.lineIndexToHeadings[i];
-        let lineLevel = Infinity;
-        if (headings !== undefined && headings.length > 0) {
-            lineLevel = Math.max(...headings.map(value => value.index.length));
+        let nonEmptyPage = false;
+        function newPage() {
+            env.pages.push(page = createPage(++currentIndex, ++frontIndex, env.size, env.margin, env.binging));
+            container.append(page.element);
+            nonEmptyPage = false;
         }
-        if (line.children.length > 0) {
-            const first = line.children[0];
-            if (first.classList.contains('break')) {
-                if ((lineLevel <= env.breakLevel.rightLevel || first.classList.contains('right')) && currentIndex % 2 === 1) {
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const headings = env.lineIndexToHeadings[i];
+            let lineLevel = Infinity;
+            if (headings !== undefined && headings.length > 0) {
+                lineLevel = Math.max(...headings.map(value => value.index.length));
+            }
+            if (line.children.length > 0) {
+                const first = line.children[0];
+                if (first.classList.contains('break')) {
+                    if ((lineLevel <= env.breakLevel.rightLevel || first.classList.contains('right')) && currentIndex % 2 === 1) {
+                        newPage();
+                    }
+                    const info = compiler.context.idToIndexInfo[first.id];
+                    if (info !== undefined) {
+                        if (info.unit.tag === 'break') {
+                            const { index } = info.unit.options;
+                            if (typeof index === 'number' && isFinite(index) && index % 1 === 0 && index >= 1) {
+                                frontIndex = index - 1;
+                            }
+                        }
+                    }
                     newPage();
                 }
-                const info = compiler.context.idToIndexInfo[first.id];
+                else if (lineLevel <= env.breakLevel.breakLevel) {
+                    if (nonEmptyPage) {
+                        newPage();
+                    }
+                    if (lineLevel <= env.breakLevel.rightLevel && currentIndex % 2 === 0) {
+                        newPage();
+                    }
+                }
+            }
+            if (line.children.length === 1 && line.childNodes.length === 1) {
+                const info = compiler.context.idToIndexInfo[line.children[0].id];
                 if (info !== undefined) {
-                    if (info.unit.tag === 'break') {
-                        const { index } = info.unit.options;
-                        if (typeof index === 'number' && isFinite(index) && index % 1 === 0 && index >= 1) {
-                            frontIndex = index - 1;
+                    let start = 0;
+                    while (true) {
+                        const result = yield getEnd(info.unit, line, page.main, nonEmptyPage, start, compiler);
+                        if (result === undefined) {
+                            if (!nonEmptyPage && line.childNodes.length > 0 && line.getBoundingClientRect().height > 0) {
+                                nonEmptyPage = true;
+                            }
+                            break;
                         }
+                        start = result;
+                        newPage();
                     }
-                }
-                newPage();
-            }
-            else if (lineLevel <= env.breakLevel.breakLevel) {
-                if (nonEmptyPage) {
-                    newPage();
-                }
-                if (lineLevel <= env.breakLevel.rightLevel && currentIndex % 2 === 0) {
-                    newPage();
+                    continue;
                 }
             }
-        }
-        if (line.children.length === 1 && line.childNodes.length === 1) {
-            const info = compiler.context.idToIndexInfo[line.children[0].id];
-            if (info !== undefined) {
-                let start = 0;
-                while (true) {
-                    const result = await getEnd(info.unit, line, page.main, nonEmptyPage, start, compiler);
-                    if (result === undefined) {
-                        if (!nonEmptyPage && line.childNodes.length > 0 && line.getBoundingClientRect().height > 0) {
-                            nonEmptyPage = true;
-                        }
-                        break;
-                    }
-                    start = result;
-                    newPage();
-                }
+            page.main.append(line);
+            if (!nonEmptyPage || line.getBoundingClientRect().bottom <= page.main.getBoundingClientRect().bottom) {
                 continue;
             }
+            newPage();
+            page.main.append(line);
+            if (line.childNodes.length > 0 && line.getBoundingClientRect().height > 0) {
+                nonEmptyPage = true;
+            }
         }
-        page.main.append(line);
-        if (!nonEmptyPage || line.getBoundingClientRect().bottom <= page.main.getBoundingClientRect().bottom) {
-            continue;
-        }
-        newPage();
-        page.main.append(line);
-        if (line.childNodes.length > 0 && line.getBoundingClientRect().height > 0) {
-            nonEmptyPage = true;
-        }
-    }
-    setElementToPage(env);
-    setUnitOrLineToPage(env, compiler);
-    setPageIndexToHeadings(env, compiler.context);
-    await fillHeaders(env, compiler);
+        setElementToPage(env);
+        setUnitOrLineToPage(env, compiler);
+        setPageIndexToHeadings(env, compiler.context);
+        yield fillHeaders(env, compiler);
+    });
 }
 function setElementToPage(env) {
     for (const page of env.pages) {
@@ -547,41 +562,43 @@ function setPageIndexToHeadings(env, context) {
         headings.push(heading);
     }
 }
-async function fillHeaders(env, compiler) {
-    const currentHeadings = [compiler.context.titleInfo];
-    for (const page of env.pages) {
-        const { headingIndexEle, headingContentEle, index } = page;
-        const headings = env.pageIndexToHeadings[index];
-        if (headings !== undefined) {
-            for (const heading of headings) {
-                for (let i = heading.index.length + 1; i < currentHeadings.length; i++) {
-                    currentHeadings[i] = undefined;
+function fillHeaders(env, compiler) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const currentHeadings = [compiler.context.titleInfo];
+        for (const page of env.pages) {
+            const { headingIndexEle, headingContentEle, index } = page;
+            const headings = env.pageIndexToHeadings[index];
+            if (headings !== undefined) {
+                for (const heading of headings) {
+                    for (let i = heading.index.length + 1; i < currentHeadings.length; i++) {
+                        currentHeadings[i] = undefined;
+                    }
+                    currentHeadings[heading.index.length] = heading;
                 }
-                currentHeadings[heading.index.length] = heading;
+            }
+            const level = index % 2 === 0 ? env.headerLevel.leftHeaderLevel : env.headerLevel.rightHeaderLevel;
+            const heading = currentHeadings[level];
+            if (heading === undefined) {
+                continue;
+            }
+            if (level > 0) {
+                headingIndexEle.append(heading.index.join('.'));
+            }
+            const { abbr } = heading.unit.options;
+            if (typeof abbr === 'string') {
+                headingContentEle.append(abbr);
+            }
+            else if (typeof abbr === 'object') {
+                headingContentEle.append(yield compiler.compileUnit(abbr));
+            }
+            else {
+                headingContentEle.append(yield compiler.compileLine(compiler.base.stdnToInlinePlainStringLine(heading.unit.children)));
             }
         }
-        const level = index % 2 === 0 ? env.headerLevel.leftHeaderLevel : env.headerLevel.rightHeaderLevel;
-        const heading = currentHeadings[level];
-        if (heading === undefined) {
-            continue;
-        }
-        if (level > 0) {
-            headingIndexEle.append(heading.index.join('.'));
-        }
-        const { abbr } = heading.unit.options;
-        if (typeof abbr === 'string') {
-            headingContentEle.append(abbr);
-        }
-        else if (typeof abbr === 'object') {
-            headingContentEle.append(await compiler.compileUnit(abbr));
-        }
-        else {
-            headingContentEle.append(await compiler.compileLine(compiler.base.stdnToInlinePlainStringLine(heading.unit.children)));
-        }
-    }
+    });
 }
 export const compilerToEnv = new Map();
-export const page = async (unit, compiler) => {
+export const page = (unit, compiler) => __awaiter(void 0, void 0, void 0, function* () {
     const element = document.createElement('div');
     let env = compilerToEnv.get(compiler);
     if (env !== undefined) {
@@ -602,27 +619,28 @@ export const page = async (unit, compiler) => {
     setSize(env.size, compiler.context.root);
     const staticEnv = env;
     const breakDelay = parseBreakDelay(unit.options['break-delay']);
-    observeFirstConnect(async () => {
-        await new Promise(r => setTimeout(r, breakDelay));
-        await breakToPages(Array.from(staticContainer.children), staticContainer, staticEnv, compiler);
+    observeFirstConnect(() => __awaiter(void 0, void 0, void 0, function* () {
+        yield new Promise(r => setTimeout(r, breakDelay));
+        yield breakToPages(Array.from(staticContainer.children), staticContainer, staticEnv, compiler);
         for (const listener of staticEnv.pagedListeners) {
-            await listener();
+            yield listener();
         }
         staticEnv.pagedListeners = [];
         if (compiler.context.root !== undefined) {
             compiler.context.root.dispatchEvent(new Event('adjust', { bubbles: true, composed: true }));
         }
-    }, element, staticContainer);
+    }), element, staticContainer);
     return element;
-};
-export const contents = async (unit, compiler) => {
+});
+export const contents = (unit, compiler) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const element = document.createElement('div');
     const env = compilerToEnv.get(compiler);
     if (env === undefined) {
         return element;
     }
     element.classList.add('breakable');
-    const dotGap = parseDotGap(unit.options['dot-gap'] ?? compiler.context.extractLastGlobalOption('dot-gap', 'contents'));
+    const dotGap = parseDotGap((_a = unit.options['dot-gap']) !== null && _a !== void 0 ? _a : compiler.context.extractLastGlobalOption('dot-gap', 'contents'));
     for (const { unit, index, id } of compiler.context.headings) {
         const item = document.createElement('div');
         const indexEle = document.createElement('span');
@@ -637,8 +655,8 @@ export const contents = async (unit, compiler) => {
         item.append(tail);
         tail.append(pageIndexEle);
         indexEle.append(index.join('.'));
-        content.append(await compiler.compileLine(compiler.base.stdnToInlinePlainStringLine(unit.children)));
-        env.pagedListeners.push(async () => {
+        content.append(yield compiler.compileLine(compiler.base.stdnToInlinePlainStringLine(unit.children)));
+        env.pagedListeners.push(() => __awaiter(void 0, void 0, void 0, function* () {
             const page = env.unitOrLineToPage.get(unit);
             if (page !== undefined) {
                 pageIndexEle.textContent = page.frontIndex.toString();
@@ -663,12 +681,12 @@ export const contents = async (unit, compiler) => {
                 dot.style.width = `${dotGap}em`;
                 pageIndexEle.before(dot);
             }
-        });
+        }));
     }
     return element;
-};
-export const h0 = async (unit, compiler) => {
+});
+export const h0 = (unit, compiler) => __awaiter(void 0, void 0, void 0, function* () {
     const element = document.createElement('h1');
-    element.append(await compiler.compileSTDN(unit.children));
+    element.append(yield compiler.compileSTDN(unit.children));
     return element;
-};
+});
